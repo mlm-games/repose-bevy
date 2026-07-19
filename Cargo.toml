@@ -1,0 +1,76 @@
+[package]
+name = "repose-bevy"
+version = "0.1.1"
+edition = "2024"
+license = "LGPL-2.1-or-later"
+description = "Bevy integration for the Repose Compose-like UI toolkit"
+repository = "https://github.com/mlm-games/repose-bevy"
+readme = "README.md"
+keywords = ["bevy", "ui", "repose", "compose", "wgpu"]
+categories = ["game-development", "gui"]
+rust-version = "1.96"
+
+[features]
+default = ["offscreen"]
+offscreen = ["dep:pollster", "dep:image"]
+shared-device = []
+
+[dependencies]
+bevy = { git = "https://github.com/bevyengine/bevy", rev = "fb89a8649d9b359e53ffb6e5492ebb7c059ac8af", default-features = false, features = [
+    "bevy_asset",
+    "bevy_log",
+    "bevy_render",
+    "bevy_core_pipeline",
+    "bevy_window",
+    "bevy_winit",
+    "bevy_image",
+    "bevy_ui",
+    "bevy_text",
+    "bevy_sprite",
+    "bevy_sprite_render",
+    "bevy_ui_render",
+    "bevy_camera",
+    "bevy_state",
+    "async_executor",
+    "bevy_color",
+    "bevy_animation",
+    "bevy_mesh",
+    "bevy_shader",
+    "bevy_material",
+    "reflect_auto_register",
+    "bevy_clipboard",
+    "default_font",
+    "custom_cursor",
+    "png",
+    "x11",
+    "wayland",
+] }
+
+repose-core = "0.24"
+repose-ui = "0.24"
+repose-app = "0.24"
+repose-render-wgpu = { version = "0.24", default-features = false }
+repose-text = "0.24"
+
+log = "0.4"
+anyhow = "1"
+bytemuck = { version = "1.25", features = ["derive"] }
+web-time = "1"
+parking_lot = "0.12"
+
+pollster = { version = "1", optional = true }
+image = { version = "0.25", default-features = false, features = [
+    "png",
+], optional = true }
+
+wgpu = "30"
+
+[[example]]
+name = "counter"
+path = "examples/counter.rs"
+required-features = ["offscreen"]
+
+[[example]]
+name = "hud"
+path = "examples/hud.rs"
+required-features = ["offscreen"]
