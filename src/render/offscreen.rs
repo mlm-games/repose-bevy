@@ -233,11 +233,7 @@ fn render_offscreen_system(
             label: Some("repose-bevy-enc"),
         });
 
-    let clear = if inner.clear_alpha > 0.0 {
-        Some([0.0, 0.0, 0.0, inner.clear_alpha as f64])
-    } else {
-        None
-    };
+    let clear = Some([0.0, 0.0, 0.0, inner.clear_alpha as f64]);
 
     // Use raw pointers to avoid borrow conflicts with MutexGuard
     let (view_ptr, tex_ptr, staging_ptr, bpr) = {
