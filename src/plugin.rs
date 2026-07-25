@@ -6,6 +6,9 @@ use crate::cursor::apply_cursor_system;
 use crate::input::{
     keyboard_system, mouse_button_system, pointer_move_system, scroll_system, window_focus_system,
 };
+use crate::platform::{
+    apply_ime_system, clipboard_system, ime_input_system, install_clipboard_hooks, ClipboardBridge,
+};
 use crate::render::ReposeRenderPlugin;
 use crate::state::{ReposeOutput, ReposeState};
 use repose_core::{RenderContext, Scheduler, View};
@@ -70,18 +73,37 @@ impl Plugin for ReposePlugin {
             .take()
             .expect("ReposePlugin root already consumed");
 
+        let bridge = ClipboardBridge::default();
+        install_clipboard_hooks(bridge.clone());
+
         app.insert_resource(ReposeSettingsRes(settings.clone()))
             .insert_resource(ReposeOutput::default())
+            .insert_resource(bridge)
             .insert_non_send(ReposeState::new(root))
             .add_plugins(ReposeRenderPlugin {
                 settings: settings.clone(),
             })
-            .add_systems(PreUpdate, sync_viewport_system)
-            .add_systems(PreUpdate, pointer_move_system)
-            .add_systems(PreUpdate, mouse_button_system)
-            .add_systems(PreUpdate, scroll_system)
-            .add_systems(PreUpdate, keyboard_system)
-            .add_systems(PreUpdate, window_focus_system)
-            .add_systems(Update, (compose_repose_system, apply_cursor_system).chain());
+            .add_systems(
+                PreUpdate,
+                (
+                    sync_viewport_system,
+                    pointer_move_system,
+                    mouse_button_system,
+                    scroll_system,
+                    ime_input_system,
+                    keyboard_system,
+                    window_focus_system,
+                ),
+            )
+            .add_systems(
+                Update,
+                (
+                    compose_repose_system,
+                    apply_cursor_system,
+                    apply_ime_system,
+                    clipboard_system,
+                )
+                    .chain(),
+            );
     }
 }

@@ -9,13 +9,13 @@ Targets Bevy **main branch** (0.20-dev, wgpu 30)
 - Declarative Repose UI (`Column`, `Button`, signals, `remember_state`, ...) as a Bevy plugin
 - Input bridging (pointer, scroll, keyboard)
 - **offscreen** (default): Repose `WgpuSceneRenderer` on separate wgpu device -> RGBA texture -> Bevy `Image` overlay
-- **shared-device** (optional): render into Bevy's graph (requires compatible wgpu)
+- **shared-device** (experimental, incomplete): render into Bevy's graph using Bevy's wgpu device (avoids CPU readback)
 
 ## Quick start
 
 ```toml
 [dependencies]
-repose-bevy = "0.1"
+repose-bevy = "0"
 bevy = { git = "https://github.com/bevyengine/bevy" }
 ```
 

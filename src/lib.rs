@@ -3,6 +3,7 @@
 pub mod compose;
 pub mod cursor;
 pub mod input;
+pub mod platform;
 pub mod plugin;
 pub mod render;
 pub mod state;

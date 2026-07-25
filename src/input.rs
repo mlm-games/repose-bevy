@@ -109,7 +109,7 @@ fn map_key(key: &BevyKey) -> Key {
     match key {
         BevyKey::Character(c) => {
             let ch = c.chars().next().unwrap_or('\0');
-            Key::Character(ch.to_ascii_lowercase())
+            Key::Character(ch)
         }
         BevyKey::Enter => Key::Enter,
         BevyKey::Tab => Key::Tab,
