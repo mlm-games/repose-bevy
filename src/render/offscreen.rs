@@ -4,10 +4,10 @@ use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat as
 use bevy::ui::{FocusPolicy, Node, ZIndex};
 use bevy::ui::widget::{ImageNode, NodeImageMode};
 use parking_lot::Mutex;
-use repose_core::RenderCommand;
 use repose_render_wgpu::WgpuSceneRenderer;
 use std::sync::Arc;
 
+use super::apply_render_commands;
 use crate::plugin::ReposePluginSettings;
 use crate::state::{ReposeState, ReposeUiImage};
 
@@ -185,58 +185,6 @@ fn ensure_target(inner: &mut OffscreenInner, w: u32, h: u32) {
         staging,
         bytes_per_row,
     });
-}
-
-fn apply_render_commands(renderer: &mut WgpuSceneRenderer, cmds: Vec<RenderCommand>) {
-    for cmd in cmds {
-        match cmd {
-            RenderCommand::SetImageEncoded { handle, bytes, srgb } => {
-                if let Err(e) = renderer.set_image_from_bytes(handle, &bytes, srgb) {
-                    bevy::log::warn!("repose-bevy: SetImageEncoded({handle}): {e:#}");
-                }
-            }
-            RenderCommand::SetImageRgba8 {
-                handle,
-                w,
-                h,
-                rgba,
-                srgb,
-            } => {
-                if let Err(e) = renderer.set_image_rgba8(handle, w, h, &rgba, srgb) {
-                    bevy::log::warn!("repose-bevy: SetImageRgba8({handle}): {e:#}");
-                }
-            }
-            RenderCommand::SetImageNv12 {
-                handle,
-                w,
-                h,
-                y,
-                uv,
-                color_info,
-            } => {
-                if let Err(e) = renderer.set_image_nv12(handle, w, h, &y, &uv, color_info) {
-                    bevy::log::warn!("repose-bevy: SetImageNv12({handle}): {e:#}");
-                }
-            }
-            RenderCommand::SetImagePlanes {
-                handle,
-                w,
-                h,
-                pixel_format,
-                planes,
-                color_info,
-            } => {
-                if let Err(e) =
-                    renderer.set_image_planes(handle, w, h, pixel_format, &planes, color_info)
-                {
-                    bevy::log::warn!("repose-bevy: SetImagePlanes({handle}): {e:#}");
-                }
-            }
-            RenderCommand::RemoveImage { handle } => {
-                renderer.remove_image(handle);
-            }
-        }
-    }
 }
 
 fn render_offscreen_system(
