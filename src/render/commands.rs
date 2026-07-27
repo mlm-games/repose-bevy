@@ -40,9 +40,9 @@ pub fn apply_render_commands(renderer: &mut WgpuSceneRenderer, cmds: Vec<RenderC
                 planes,
                 color_info,
             } => {
-                let planes: Vec<Vec<u8>> = planes.into_iter().map(|p| p.to_vec()).collect();
+                let plane_refs: Vec<&[u8]> = planes.iter().map(|p| p.as_ref()).collect();
                 if let Err(e) =
-                    renderer.set_image_planes(handle, w, h, pixel_format, &planes, color_info)
+                    renderer.set_image_planes(handle, w, h, pixel_format, &plane_refs, color_info)
                 {
                     bevy::log::warn!("repose-bevy: SetImagePlanes({handle}): {e:#}");
                 }
