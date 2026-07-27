@@ -50,9 +50,7 @@ pub fn apply_render_commands(renderer: &mut WgpuSceneRenderer, cmds: Vec<RenderC
             RenderCommand::RemoveImage { handle } => {
                 renderer.remove_image(handle);
             }
-            RenderCommand::SetImageDmaBuf { .. } => {
-                bevy::log::warn!("repose-bevy: SetImageDmaBuf not supported");
-            }
+            _ => {}
         }
     }
 }
