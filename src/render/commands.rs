@@ -40,7 +40,7 @@ pub fn apply_render_commands(renderer: &mut WgpuSceneRenderer, cmds: Vec<RenderC
                 planes,
                 color_info,
             } => {
-                let planes: Vec<&[u8]> = planes.iter().map(|p| p.as_ref()).collect();
+                let planes: Vec<Vec<u8>> = planes.into_iter().map(|p| p.to_vec()).collect();
                 if let Err(e) =
                     renderer.set_image_planes(handle, w, h, pixel_format, &planes, color_info)
                 {

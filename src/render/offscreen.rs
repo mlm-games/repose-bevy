@@ -1,13 +1,17 @@
 use bevy::asset::RenderAssetUsages;
+use bevy::image::ImageSampler;
 use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat as BevyTexFormat};
-use bevy::ui::{FocusPolicy, Node, ZIndex};
-use bevy::ui::widget::{ImageNode, NodeImageMode};
+use bevy::ui::FocusPolicy;
+use bevy::ui::Node;
+use bevy::ui::ZIndex;
+use bevy::ui_render::ui_material::MaterialNode;
 use parking_lot::Mutex;
 use repose_render_wgpu::WgpuSceneRenderer;
 use std::sync::Arc;
 
 use super::apply_render_commands;
+use super::ReposeOverlayMaterial;
 use crate::plugin::ReposePluginSettings;
 use crate::state::{ReposeState, ReposeUiImage};
 
@@ -80,26 +84,35 @@ fn create_renderer(msaa: u32) -> WgpuSceneRenderer {
     WgpuSceneRenderer::from_device(device, queue, wgpu::TextureFormat::Rgba8UnormSrgb, msaa.max(1))
 }
 
-fn setup_overlay(
-    mut commands: Commands,
-    mut images: ResMut<Assets<Image>>,
-    settings: Res<crate::plugin::ReposeSettingsRes>,
-) {
+fn make_overlay_image(w: u32, h: u32, pixels: &[u8]) -> Image {
     let mut image = Image::new_fill(
         Extent3d {
-            width: 1,
-            height: 1,
+            width: w,
+            height: h,
             depth_or_array_layers: 1,
         },
         TextureDimension::D2,
-        &[0, 0, 0, 0],
+        pixels,
         BevyTexFormat::Rgba8UnormSrgb,
         RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
     );
     image.texture_descriptor.usage = bevy::render::render_resource::TextureUsages::TEXTURE_BINDING
         | bevy::render::render_resource::TextureUsages::COPY_DST;
+    image.sampler = ImageSampler::linear();
+    image
+}
 
+fn setup_overlay(
+    mut commands: Commands,
+    mut images: ResMut<Assets<Image>>,
+    mut materials: ResMut<Assets<ReposeOverlayMaterial>>,
+    settings: Res<crate::plugin::ReposeSettingsRes>,
+) {
+    let image = make_overlay_image(1, 1, &[0, 0, 0, 0]);
     let handle = images.add(image);
+    let mat = materials.add(ReposeOverlayMaterial {
+        texture: handle.clone(),
+    });
     commands.insert_resource(ReposeUiImage {
         image: handle.clone(),
         width: 1,
@@ -117,6 +130,7 @@ fn setup_overlay(
                     top: Val::Px(0.0),
                     ..default()
                 },
+                BackgroundColor(Color::NONE),
                 FocusPolicy::Pass,
                 ZIndex(i32::MAX),
                 Name::new("ReposeOverlay"),
@@ -128,11 +142,9 @@ fn setup_overlay(
                         height: Val::Percent(100.0),
                         ..default()
                     },
-                    ImageNode {
-                        image: handle,
-                        image_mode: NodeImageMode::Stretch,
-                        ..default()
-                    },
+                    BackgroundColor(Color::NONE),
+                    FocusPolicy::Pass,
+                    MaterialNode::<ReposeOverlayMaterial>(mat),
                 ));
             });
     }
@@ -279,20 +291,7 @@ fn render_offscreen_system(
     staging.unmap();
 
     if ui_image.width != w || ui_image.height != h {
-        let mut image = Image::new_fill(
-            Extent3d {
-                width: w,
-                height: h,
-                depth_or_array_layers: 1,
-            },
-            TextureDimension::D2,
-            &pixels,
-            BevyTexFormat::Rgba8UnormSrgb,
-            RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
-        );
-        image.texture_descriptor.usage =
-            bevy::render::render_resource::TextureUsages::TEXTURE_BINDING
-                | bevy::render::render_resource::TextureUsages::COPY_DST;
+        let image = make_overlay_image(w, h, &pixels);
         if let Some(mut img) = images.get_mut(&ui_image.image) {
             *img = image;
         }

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use bevy::image::ImageSampler;
 use bevy::prelude::*;
 use bevy::render::extract_resource::{ExtractResource, ExtractResourcePlugin};
 use bevy::render::render_asset::RenderAssets;
@@ -7,11 +8,14 @@ use bevy::render::render_resource::TextureUsages;
 use bevy::render::renderer::{RenderContext, RenderDevice, RenderQueue};
 use bevy::render::texture::GpuImage;
 use bevy::render::{ExtractSchedule, Render, RenderApp};
+use bevy::ui_render::ui_material::MaterialNode;
+
 use parking_lot::Mutex;
 use repose_core::RenderCommand;
 use repose_render_wgpu::WgpuSceneRenderer;
 
 use super::apply_render_commands;
+use super::ReposeOverlayMaterial;
 use crate::plugin::{ReposePluginSettings, ReposeSettingsRes};
 use crate::state::{ReposeState, ReposeUiImage};
 
@@ -84,6 +88,7 @@ impl Plugin for SharedDevicePlugin {
 fn setup_overlay(
     mut commands: Commands,
     mut images: ResMut<Assets<Image>>,
+    mut materials: ResMut<Assets<ReposeOverlayMaterial>>,
     settings: Res<ReposeSettingsRes>,
     mut frame: ResMut<ReposeExtractedFrame>,
 ) {
@@ -101,8 +106,12 @@ fn setup_overlay(
     image.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
         | TextureUsages::COPY_DST
         | TextureUsages::RENDER_ATTACHMENT;
+    image.sampler = ImageSampler::linear();
 
     let handle = images.add(image);
+    let mat = materials.add(ReposeOverlayMaterial {
+        texture: handle.clone(),
+    });
     commands.insert_resource(ReposeUiImage {
         image: handle.clone(),
         width: 1,
@@ -121,6 +130,7 @@ fn setup_overlay(
                     top: Val::Px(0.0),
                     ..default()
                 },
+                BackgroundColor(Color::NONE),
                 bevy::ui::FocusPolicy::Pass,
                 bevy::ui::ZIndex(i32::MAX),
                 Name::new("ReposeOverlay"),
@@ -132,11 +142,9 @@ fn setup_overlay(
                         height: Val::Percent(100.0),
                         ..default()
                     },
-                    bevy::ui::widget::ImageNode {
-                        image: handle,
-                        image_mode: bevy::ui::widget::NodeImageMode::Stretch,
-                        ..default()
-                    },
+                    BackgroundColor(Color::NONE),
+                    bevy::ui::FocusPolicy::Pass,
+                    MaterialNode::<ReposeOverlayMaterial>(mat),
                 ));
             });
     }
