@@ -46,11 +46,11 @@ bevy = { git = "https://github.com/bevyengine/bevy", rev = "fb89a8649d9b359e53ff
     "wayland",
 ] }
 
-repose-core = "0.24"
-repose-ui = "0.24"
-repose-app = "0.24"
-repose-render-wgpu = { version = "0.24", default-features = false }
-repose-text = "0.24"
+repose-core = "0.25"
+repose-ui = "0.25"
+repose-app = "0.25"
+repose-render-wgpu = { version = "0.25", default-features = false }
+repose-text = "0.25"
 
 log = "0.4"
 anyhow = "1"
