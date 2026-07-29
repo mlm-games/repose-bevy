@@ -33,16 +33,14 @@ struct SharedSettings {
 }
 
 #[derive(Resource, Clone)]
-struct ReposeCmdQueue(Arc<Mutex<Vec<RenderCommand>>>);
-
-#[derive(Resource, Clone)]
 struct ReposeExtractedFrame {
     scene: repose_core::Scene,
+    cmds: Arc<std::sync::Mutex<Vec<RenderCommand>>>,
     width: u32,
     height: u32,
     clear_alpha: f32,
     image: Handle<Image>,
-    cmd_queue: ReposeCmdQueue,
+    frame_gen: u64,
 }
 
 impl ExtractResource<RenderApp> for ReposeExtractedFrame {
@@ -52,9 +50,17 @@ impl ExtractResource<RenderApp> for ReposeExtractedFrame {
     }
 }
 
+struct PrivateTarget {
+    texture: wgpu::Texture,
+    view: wgpu::TextureView,
+    width: u32,
+    height: u32,
+}
+
 #[derive(Resource)]
 struct SharedGpu {
     renderer: Mutex<WgpuSceneRenderer>,
+    target: Mutex<Option<PrivateTarget>>,
 }
 
 fn make_overlay_image(w: u32, h: u32) -> Image {
@@ -68,9 +74,8 @@ fn make_overlay_image(w: u32, h: u32) -> Image {
         TextureFormat::Rgba8UnormSrgb,
         RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
     );
-    image.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
-        | TextureUsages::COPY_DST
-        | TextureUsages::RENDER_ATTACHMENT;
+    image.texture_descriptor.usage =
+        TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST;
     image.sampler = ImageSampler::linear();
     image
 }
@@ -82,17 +87,15 @@ impl Plugin for SharedDevicePlugin {
             msaa_samples: self.settings.msaa_samples.max(1),
         };
 
-        let cmd_queue = ReposeCmdQueue(Arc::new(Mutex::new(Vec::new())));
-
         app.insert_resource(settings.clone())
-            .insert_resource(cmd_queue.clone())
             .insert_resource(ReposeExtractedFrame {
                 scene: repose_core::Scene::default(),
+                cmds: Arc::new(std::sync::Mutex::new(Vec::new())),
                 width: 1,
                 height: 1,
                 clear_alpha: settings.clear_alpha,
                 image: Handle::default(),
-                cmd_queue: cmd_queue.clone(),
+                frame_gen: 0,
             })
             .add_plugins(ExtractResourcePlugin::<ReposeExtractedFrame>::default())
             .add_systems(Startup, setup_overlay)
@@ -163,7 +166,6 @@ fn prepare_extract_frame(
     state: NonSendMut<ReposeState>,
     settings: Res<SharedSettings>,
     mut frame: ResMut<ReposeExtractedFrame>,
-    cmd_queue: Res<ReposeCmdQueue>,
     ui_image: Res<ReposeUiImage>,
     mut images: ResMut<Assets<Image>>,
 ) {
@@ -181,14 +183,13 @@ fn prepare_extract_frame(
         });
     }
 
-    *cmd_queue.0.lock() = state.render_ctx.drain();
-
     frame.scene = state.scene.clone();
+    *frame.cmds.lock().unwrap() = state.render_ctx.drain();
     frame.width = w;
     frame.height = h;
     frame.clear_alpha = settings.clear_alpha;
     frame.image = ui_image.image.clone();
-    frame.cmd_queue = cmd_queue.clone();
+    frame.frame_gen = frame.frame_gen.wrapping_add(1);
 }
 
 fn init_shared_renderer(
@@ -213,6 +214,7 @@ fn init_shared_renderer(
     info!("repose-bevy shared-device: bound WgpuSceneRenderer to Bevy device");
     commands.insert_resource(SharedGpu {
         renderer: Mutex::new(renderer),
+        target: Mutex::new(None),
     });
 }
 
@@ -232,27 +234,67 @@ fn render_shared_system(
         return;
     };
 
-    if !gpu_image
-        .texture_descriptor
-        .usage
-        .contains(wgpu::TextureUsages::RENDER_ATTACHMENT)
-    {
-        warn_once!("repose-bevy shared-device: image missing RENDER_ATTACHMENT usage");
-        return;
-    }
-
-    let cmds = frame.cmd_queue.0.lock().drain(..).collect::<Vec<_>>();
-    let mut renderer = gpu.renderer.lock();
-    apply_render_commands(&mut renderer, cmds);
-
     let w = frame.width.max(1);
     let h = frame.height.max(1);
+
+    let mut renderer = gpu.renderer.lock();
+    let mut slot = gpu.target.lock();
+    let device = &renderer.device;
+
+    let recreate = slot.as_ref().map_or(true, |t| t.width != w || t.height != h);
+    if recreate {
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("repose-private-rt"),
+            size: wgpu::Extent3d {
+                width: w,
+                height: h,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+        let view = texture.create_view(&Default::default());
+        *slot = Some(PrivateTarget {
+            texture,
+            view,
+            width: w,
+            height: h,
+        });
+    }
+    let target = slot.as_ref().unwrap();
+
+    let cmds = frame.cmds.lock().unwrap().drain(..).collect::<Vec<_>>();
+    apply_render_commands(&mut renderer, cmds);
     if renderer.output_width != w || renderer.output_height != h {
         renderer.resize(w, h);
     }
 
-    let clear = Some([0.0, 0.0, 0.0, frame.clear_alpha as f64]);
-    let view: &wgpu::TextureView = &gpu_image.texture_view;
     let encoder = render_context.command_encoder();
-    renderer.render_scene_to_encoder(&frame.scene, encoder, view, clear);
+    let clear = Some([0.0, 0.0, 0.0, frame.clear_alpha as f64]);
+
+    renderer.render_scene_to_encoder(&frame.scene, encoder, &target.view, clear);
+
+    encoder.copy_texture_to_texture(
+        wgpu::TexelCopyTextureInfo {
+            texture: &target.texture,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
+        },
+        wgpu::TexelCopyTextureInfo {
+            texture: &gpu_image.texture,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
+        },
+        wgpu::Extent3d {
+            width: w,
+            height: h,
+            depth_or_array_layers: 1,
+        },
+    );
 }

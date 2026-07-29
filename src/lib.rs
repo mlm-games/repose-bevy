@@ -1,6 +1,7 @@
 #![allow(clippy::type_complexity)]
 
 pub mod compose;
+pub use compose::compose_repose_system;
 pub mod cursor;
 pub mod input;
 pub mod platform;
