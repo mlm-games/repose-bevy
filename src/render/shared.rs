@@ -8,7 +8,7 @@ use bevy::render::render_asset::RenderAssets;
 use bevy::render::render_resource::{
     Extent3d, TextureDimension, TextureFormat, TextureUsages,
 };
-use bevy::render::renderer::{RenderDevice, RenderGraph, RenderGraphSystems, RenderQueue};
+use bevy::render::renderer::{RenderContext, RenderDevice, RenderGraph, RenderGraphSystems, RenderQueue};
 use bevy::render::texture::GpuImage;
 use bevy::render::{ExtractSchedule, RenderApp};
 use bevy::ui_render::ui_material::MaterialNode;
@@ -43,7 +43,6 @@ struct ReposeExtractedFrame {
     clear_alpha: f32,
     image: Handle<Image>,
     cmd_queue: ReposeCmdQueue,
-    gen_counter: u64,
 }
 
 impl ExtractResource<RenderApp> for ReposeExtractedFrame {
@@ -94,7 +93,6 @@ impl Plugin for SharedDevicePlugin {
                 clear_alpha: settings.clear_alpha,
                 image: Handle::default(),
                 cmd_queue: cmd_queue.clone(),
-                gen_counter: 0,
             })
             .add_plugins(ExtractResourcePlugin::<ReposeExtractedFrame>::default())
             .add_systems(Startup, setup_overlay)
@@ -191,7 +189,6 @@ fn prepare_extract_frame(
     frame.clear_alpha = settings.clear_alpha;
     frame.image = ui_image.image.clone();
     frame.cmd_queue = cmd_queue.clone();
-    frame.gen_counter = frame.gen_counter.wrapping_add(1);
 }
 
 fn init_shared_renderer(
@@ -220,6 +217,7 @@ fn init_shared_renderer(
 }
 
 fn render_shared_system(
+    mut render_context: RenderContext,
     frame: Option<Res<ReposeExtractedFrame>>,
     gpu: Option<Res<SharedGpu>>,
     gpu_images: Res<RenderAssets<GpuImage>>,
@@ -253,15 +251,8 @@ fn render_shared_system(
         renderer.resize(w, h);
     }
 
-    let mut encoder = renderer
-        .device
-        .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("repose-bevy-shared"),
-        });
-
     let clear = Some([0.0, 0.0, 0.0, frame.clear_alpha as f64]);
     let view: &wgpu::TextureView = &gpu_image.texture_view;
-    renderer.render_scene_to_encoder(&frame.scene, &mut encoder, view, clear);
-
-    renderer.queue.submit(Some(encoder.finish()));
+    let encoder = render_context.command_encoder();
+    renderer.render_scene_to_encoder(&frame.scene, encoder, view, clear);
 }
