@@ -190,6 +190,13 @@ fn prepare_extract_frame(
         });
     }
 
+    if let Some(mut img) = images.get_mut(&ui_image.image) {
+        if let Some(data) = img.data.as_mut().and_then(|d| d.first_mut()) {
+            *data ^= 1;
+            *data ^= 1;
+        }
+    }
+
     *cmd_queue.0.lock() = state.render_ctx.drain();
 
     frame.scene = state.scene.clone();
