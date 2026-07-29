@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
+use bevy::asset::RenderAssetUsages;
 use bevy::image::ImageSampler;
 use bevy::prelude::*;
 use bevy::render::extract_resource::{ExtractResource, ExtractResourcePlugin};
 use bevy::render::render_asset::RenderAssets;
 use bevy::render::render_resource::TextureUsages;
-use bevy::render::renderer::{RenderContext, RenderDevice, RenderQueue};
+use bevy::render::renderer::{RenderContext, RenderDevice, RenderGraph, RenderGraphSystems, RenderQueue};
 use bevy::render::texture::GpuImage;
 use bevy::render::{ExtractSchedule, Render, RenderApp};
 use bevy::ui_render::ui_material::MaterialNode;
@@ -54,6 +55,24 @@ struct SharedGpu {
     renderer: Mutex<WgpuSceneRenderer>,
 }
 
+fn make_overlay_image(w: u32, h: u32) -> Image {
+    let mut image = Image::new_uninit(
+        bevy::render::render_resource::Extent3d {
+            width: w.max(1),
+            height: h.max(1),
+            depth_or_array_layers: 1,
+        },
+        bevy::render::render_resource::TextureDimension::D2,
+        bevy::render::render_resource::TextureFormat::Rgba8UnormSrgb,
+        RenderAssetUsages::RENDER_WORLD,
+    );
+    image.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
+        | TextureUsages::COPY_DST
+        | TextureUsages::RENDER_ATTACHMENT;
+    image.sampler = ImageSampler::linear();
+    image
+}
+
 impl Plugin for SharedDevicePlugin {
     fn build(&self, app: &mut App) {
         let settings = SharedSettings {
@@ -81,7 +100,7 @@ impl Plugin for SharedDevicePlugin {
         render_app
             .insert_resource(settings)
             .add_systems(ExtractSchedule, init_shared_renderer)
-            .add_systems(Render, render_shared_system);
+            .add_systems(RenderGraph, render_shared_system.in_set(RenderGraphSystems::Begin));
     }
 }
 
@@ -92,23 +111,7 @@ fn setup_overlay(
     settings: Res<ReposeSettingsRes>,
     mut frame: ResMut<ReposeExtractedFrame>,
 ) {
-    let mut image = Image::new_fill(
-        bevy::render::render_resource::Extent3d {
-            width: 1,
-            height: 1,
-            depth_or_array_layers: 1,
-        },
-        bevy::render::render_resource::TextureDimension::D2,
-        &[0, 0, 0, 0],
-        bevy::render::render_resource::TextureFormat::Rgba8UnormSrgb,
-        bevy::asset::RenderAssetUsages::MAIN_WORLD | bevy::asset::RenderAssetUsages::RENDER_WORLD,
-    );
-    image.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
-        | TextureUsages::COPY_DST
-        | TextureUsages::RENDER_ATTACHMENT;
-    image.sampler = ImageSampler::linear();
-
-    let handle = images.add(image);
+    let handle = images.add(make_overlay_image(1, 1));
     let mat = materials.add(ReposeOverlayMaterial {
         texture: handle.clone(),
     });
@@ -163,38 +166,14 @@ fn prepare_extract_frame(
     let h = state.fb_height.max(1);
 
     if ui_image.width != w || ui_image.height != h {
-        let pixels = vec![0u8; (w * h * 4) as usize];
-        let mut image = Image::new_fill(
-            bevy::render::render_resource::Extent3d {
-                width: w,
-                height: h,
-                depth_or_array_layers: 1,
-            },
-            bevy::render::render_resource::TextureDimension::D2,
-            &pixels,
-            bevy::render::render_resource::TextureFormat::Rgba8UnormSrgb,
-            bevy::asset::RenderAssetUsages::MAIN_WORLD
-                | bevy::asset::RenderAssetUsages::RENDER_WORLD,
-        );
-        image.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
-            | TextureUsages::COPY_DST
-            | TextureUsages::RENDER_ATTACHMENT;
-
         if let Some(mut img) = images.get_mut(&ui_image.image) {
-            *img = image;
+            *img = make_overlay_image(w, h);
         }
         commands.insert_resource(ReposeUiImage {
             image: ui_image.image.clone(),
             width: w,
             height: h,
         });
-    }
-
-    if let Some(mut img) = images.get_mut(&ui_image.image) {
-        if let Some(data) = img.data.as_mut().and_then(|d| d.first_mut()) {
-            *data ^= 1;
-            *data ^= 1;
-        }
     }
 
     *cmd_queue.0.lock() = state.render_ctx.drain();
