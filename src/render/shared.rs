@@ -183,13 +183,20 @@ fn prepare_extract_frame(
         });
     }
 
+    let next_gen = frame.frame_gen.wrapping_add(1);
+    let node_count = state.scene.nodes.len();
+    info!(
+        "[diag:prepare_extract_frame] gen={next_gen} scene_nodes={node_count} size={w}x{h} overlay_size={}x{}",
+        ui_image.width, ui_image.height
+    );
+
     frame.scene = state.scene.clone();
     *frame.cmds.lock().unwrap() = state.render_ctx.drain();
     frame.width = w;
     frame.height = h;
     frame.clear_alpha = settings.clear_alpha;
     frame.image = ui_image.image.clone();
-    frame.frame_gen = frame.frame_gen.wrapping_add(1);
+    frame.frame_gen = next_gen;
 }
 
 fn init_shared_renderer(
@@ -234,8 +241,21 @@ fn render_shared_system(
         return;
     };
 
+    info!(
+        "[diag:render_shared_system] ui_image usage={:?} format={:?} size={:?}",
+        gpu_image.texture_descriptor.usage,
+        gpu_image.texture_descriptor.format,
+        gpu_image.texture_descriptor.size,
+    );
+
     let w = frame.width.max(1);
     let h = frame.height.max(1);
+    let scene_nodes = frame.scene.nodes.len();
+    let gval = frame.frame_gen;
+
+    info!(
+        "[diag:render_shared_system] ENTER gen={gval} scene_nodes={scene_nodes} size={w}x{h}"
+    );
 
     let mut renderer = gpu.renderer.lock();
     let mut slot = gpu.target.lock();
@@ -264,6 +284,7 @@ fn render_shared_system(
             width: w,
             height: h,
         });
+        info!("[diag:render_shared_system] created private RT {}x{}", w, h);
     }
     let target = slot.as_ref().unwrap();
 
@@ -278,6 +299,10 @@ fn render_shared_system(
 
     renderer.render_scene_to_encoder(&frame.scene, encoder, &target.view, clear);
 
+    info!(
+        "[diag:render_shared_system] COPY {}x{} private_rt -> ui_image",
+        w, h
+    );
     encoder.copy_texture_to_texture(
         wgpu::TexelCopyTextureInfo {
             texture: &target.texture,
@@ -297,4 +322,5 @@ fn render_shared_system(
             depth_or_array_layers: 1,
         },
     );
+    info!("[diag:render_shared_system] EXIT ok");
 }
