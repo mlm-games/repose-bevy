@@ -50,18 +50,9 @@ impl ExtractResource<RenderApp> for ReposeExtractedFrame {
     }
 }
 
-struct PrivateTarget {
-    texture: wgpu::Texture,
-    view: wgpu::TextureView,
-    width: u32,
-    height: u32,
-}
-
 #[derive(Resource)]
 struct SharedGpu {
     renderer: Mutex<WgpuSceneRenderer>,
-    target: Mutex<Option<PrivateTarget>>,
-    blitter: Mutex<Option<wgpu::util::TextureBlitter>>,
 }
 
 fn make_overlay_image(w: u32, h: u32) -> Image {
@@ -219,16 +210,9 @@ fn init_shared_renderer(
         settings.msaa_samples,
     );
 
-    let blitter = wgpu::util::TextureBlitter::new(
-        &device.wgpu_device(),
-        wgpu::TextureFormat::Rgba8UnormSrgb,
-    );
-
     info!("repose-bevy shared-device: bound WgpuSceneRenderer to Bevy device");
     commands.insert_resource(SharedGpu {
         renderer: Mutex::new(renderer),
-        target: Mutex::new(None),
-        blitter: Mutex::new(Some(blitter)),
     });
 }
 
@@ -252,36 +236,6 @@ fn render_shared_system(
     let h = frame.height.max(1);
 
     let mut renderer = gpu.renderer.lock();
-    let mut slot = gpu.target.lock();
-    let device = renderer.device.clone();
-
-    let recreate = slot.as_ref().map_or(true, |t| t.width != w || t.height != h);
-    if recreate {
-        let texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("repose-private-rt"),
-            size: wgpu::Extent3d {
-                width: w,
-                height: h,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8UnormSrgb,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                | wgpu::TextureUsages::COPY_SRC
-                | wgpu::TextureUsages::TEXTURE_BINDING,
-            view_formats: &[],
-        });
-        let view = texture.create_view(&Default::default());
-        *slot = Some(PrivateTarget {
-            texture,
-            view,
-            width: w,
-            height: h,
-        });
-    }
-    let target = slot.as_ref().unwrap();
 
     let cmds = frame.cmds.lock().unwrap().drain(..).collect::<Vec<_>>();
     apply_render_commands(&mut renderer, cmds);
@@ -292,13 +246,5 @@ fn render_shared_system(
     let encoder = render_context.command_encoder();
     let clear = Some([0.0, 0.0, 0.0, frame.clear_alpha as f64]);
 
-    renderer.render_scene_to_encoder(&frame.scene, encoder, &target.view, clear);
-
-    let blitter = gpu.blitter.lock();
-    if let Some(blitter) = blitter.as_ref() {
-        let gval = frame.frame_gen;
-        info!("[repose] blit gen={gval} {w}x{h} private_rt -> ui_image");
-        blitter.copy(&device, encoder, &target.view, &gpu_image.texture_view);
-        info!("[repose] blit done");
-    }
+    renderer.render_scene_to_encoder(&frame.scene, encoder, &gpu_image.texture_view, clear);
 }
