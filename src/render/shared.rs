@@ -61,6 +61,7 @@ struct PrivateTarget {
 struct SharedGpu {
     renderer: Mutex<WgpuSceneRenderer>,
     target: Mutex<Option<PrivateTarget>>,
+    blitter: Mutex<Option<wgpu::util::TextureBlitter>>,
 }
 
 fn make_overlay_image(w: u32, h: u32) -> Image {
@@ -74,8 +75,9 @@ fn make_overlay_image(w: u32, h: u32) -> Image {
         TextureFormat::Rgba8UnormSrgb,
         RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
     );
-    image.texture_descriptor.usage =
-        TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST;
+    image.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
+        | TextureUsages::COPY_DST
+        | TextureUsages::RENDER_ATTACHMENT;
     image.sampler = ImageSampler::linear();
     image
 }
@@ -184,10 +186,9 @@ fn prepare_extract_frame(
     }
 
     let next_gen = frame.frame_gen.wrapping_add(1);
-    let node_count = state.scene.nodes.len();
     info!(
-        "[diag:prepare_extract_frame] gen={next_gen} scene_nodes={node_count} size={w}x{h} overlay_size={}x{}",
-        ui_image.width, ui_image.height
+        "[repose] extract gen={next_gen} scene_nodes={} size={w}x{h}",
+        state.scene.nodes.len()
     );
 
     frame.scene = state.scene.clone();
@@ -218,10 +219,16 @@ fn init_shared_renderer(
         settings.msaa_samples,
     );
 
+    let blitter = wgpu::util::TextureBlitter::new(
+        &device.wgpu_device(),
+        wgpu::TextureFormat::Rgba8UnormSrgb,
+    );
+
     info!("repose-bevy shared-device: bound WgpuSceneRenderer to Bevy device");
     commands.insert_resource(SharedGpu {
         renderer: Mutex::new(renderer),
         target: Mutex::new(None),
+        blitter: Mutex::new(Some(blitter)),
     });
 }
 
@@ -241,25 +248,12 @@ fn render_shared_system(
         return;
     };
 
-    info!(
-        "[diag:render_shared_system] ui_image usage={:?} format={:?} size={:?}",
-        gpu_image.texture_descriptor.usage,
-        gpu_image.texture_descriptor.format,
-        gpu_image.texture_descriptor.size,
-    );
-
     let w = frame.width.max(1);
     let h = frame.height.max(1);
-    let scene_nodes = frame.scene.nodes.len();
-    let gval = frame.frame_gen;
-
-    info!(
-        "[diag:render_shared_system] ENTER gen={gval} scene_nodes={scene_nodes} size={w}x{h}"
-    );
 
     let mut renderer = gpu.renderer.lock();
     let mut slot = gpu.target.lock();
-    let device = &renderer.device;
+    let device = renderer.device.clone();
 
     let recreate = slot.as_ref().map_or(true, |t| t.width != w || t.height != h);
     if recreate {
@@ -284,7 +278,6 @@ fn render_shared_system(
             width: w,
             height: h,
         });
-        info!("[diag:render_shared_system] created private RT {}x{}", w, h);
     }
     let target = slot.as_ref().unwrap();
 
@@ -299,28 +292,11 @@ fn render_shared_system(
 
     renderer.render_scene_to_encoder(&frame.scene, encoder, &target.view, clear);
 
-    info!(
-        "[diag:render_shared_system] COPY {}x{} private_rt -> ui_image",
-        w, h
-    );
-    encoder.copy_texture_to_texture(
-        wgpu::TexelCopyTextureInfo {
-            texture: &target.texture,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::All,
-        },
-        wgpu::TexelCopyTextureInfo {
-            texture: &gpu_image.texture,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::All,
-        },
-        wgpu::Extent3d {
-            width: w,
-            height: h,
-            depth_or_array_layers: 1,
-        },
-    );
-    info!("[diag:render_shared_system] EXIT ok");
+    let blitter = gpu.blitter.lock();
+    if let Some(blitter) = blitter.as_ref() {
+        let gval = frame.frame_gen;
+        info!("[repose] blit gen={gval} {w}x{h} private_rt -> ui_image");
+        blitter.copy(&device, encoder, &target.view, &gpu_image.texture_view);
+        info!("[repose] blit done");
+    }
 }
