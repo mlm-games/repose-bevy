@@ -246,8 +246,8 @@ fn render_shared_system(
     let mut renderer = gpu.renderer.lock();
     apply_render_commands(&mut renderer, cmds);
 
-    let w = frame.width.max(1);
-    let h = frame.height.max(1);
+    let w = gpu_image.texture_descriptor.size.width.max(1);
+    let h = gpu_image.texture_descriptor.size.height.max(1);
     if renderer.output_width != w || renderer.output_height != h {
         renderer.resize(w, h);
     }
