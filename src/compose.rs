@@ -85,6 +85,7 @@ pub fn compose_repose_system(
     let cursor = state.runtime.take_cursor_suggestion();
 
     state.scene = frame.scene.clone();
+    state.runtime.reconcile_hover_from_mouse_pos(&frame);
     state.runtime.cache_frame(frame);
 
     output.cursor = cursor;

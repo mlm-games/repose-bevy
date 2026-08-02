@@ -2,7 +2,7 @@ use bevy::input::mouse::{MouseButtonInput, MouseWheel};
 use bevy::input::keyboard::{Key as BevyKey, KeyboardInput};
 use bevy::input::ButtonState;
 use bevy::prelude::*;
-use bevy::window::{CursorMoved, PrimaryWindow, WindowEvent, WindowFocused};
+use bevy::window::{CursorLeft, CursorMoved, PrimaryWindow, WindowEvent, WindowFocused};
 use repose_core::input::{
     Key, KeyEvent, KeyEventType, Modifiers, PointerButton,
 };
@@ -46,8 +46,22 @@ pub fn pointer_move_system(
 
     for event in window_events.read() {
         if let WindowEvent::CursorMoved(CursorMoved { position, .. }) = event {
+            state.runtime.pointer_inside = true;
             let pos = physical_pos(window, Vec2 { x: position.x, y: position.y });
             let _ = state.runtime.handle_pointer_move(pos);
+        }
+    }
+}
+
+pub fn cursor_left_system(
+    mut window_events: MessageReader<WindowEvent>,
+    mut state: NonSendMut<ReposeState>,
+) {
+    for event in window_events.read() {
+        if let WindowEvent::CursorLeft(CursorLeft { .. }) = event {
+            state.runtime.pointer_inside = false;
+            state.runtime.clear_hover();
+            state.force_compose = true;
         }
     }
 }

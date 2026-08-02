@@ -4,8 +4,9 @@ use bevy::prelude::*;
 use bevy::render::extract_resource::{ExtractResource, ExtractResourcePlugin};
 use bevy::render::render_asset::RenderAssets;
 use bevy::render::render_resource::TextureUsages;
-use bevy::render::renderer::{RenderContext, RenderDevice, RenderQueue};
+use bevy::render::renderer::{RenderAdapter, RenderContext, RenderDevice, RenderQueue};
 use bevy::render::texture::GpuImage;
+use bevy::image::ImageSampler;
 use bevy::render::{ExtractSchedule, Render, RenderApp};
 use parking_lot::Mutex;
 use repose_core::RenderCommand;
@@ -101,6 +102,7 @@ fn setup_overlay(
     image.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
         | TextureUsages::COPY_DST
         | TextureUsages::RENDER_ATTACHMENT;
+    image.sampler = ImageSampler::nearest();
 
     let handle = images.add(image);
     commands.insert_resource(ReposeUiImage {
@@ -171,6 +173,7 @@ fn prepare_extract_frame(
         image.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
             | TextureUsages::COPY_DST
             | TextureUsages::RENDER_ATTACHMENT;
+        image.sampler = ImageSampler::nearest();
 
         if let Some(mut img) = images.get_mut(&ui_image.image) {
             *img = image;
@@ -196,6 +199,7 @@ fn init_shared_renderer(
     mut commands: Commands,
     device: Res<RenderDevice>,
     queue: Res<RenderQueue>,
+    adapter: Res<RenderAdapter>,
     settings: Res<SharedSettings>,
     existing: Option<Res<SharedGpu>>,
 ) {
@@ -204,12 +208,10 @@ fn init_shared_renderer(
     }
 
     let wgpu_queue: wgpu::Queue = (**queue.0).clone();
-    let renderer = WgpuSceneRenderer::from_device(
-        device.wgpu_device().clone(),
-        wgpu_queue,
-        wgpu::TextureFormat::Rgba8UnormSrgb,
-        settings.msaa_samples,
-    );
+    let wgpu_device = device.wgpu_device().clone();
+    let format = wgpu::TextureFormat::Rgba8UnormSrgb;
+    let msaa = super::pick_msaa(&adapter, settings.msaa_samples, format);
+    let renderer = WgpuSceneRenderer::from_device(wgpu_device, wgpu_queue, format, msaa);
 
     info!("repose-bevy shared-device: bound WgpuSceneRenderer to Bevy device");
     commands.insert_resource(SharedGpu {

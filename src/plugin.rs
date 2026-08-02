@@ -4,7 +4,8 @@ use std::sync::Mutex;
 use crate::compose::{compose_repose_system, sync_viewport_system};
 use crate::cursor::apply_cursor_system;
 use crate::input::{
-    keyboard_system, mouse_button_system, pointer_move_system, scroll_system, window_focus_system,
+    cursor_left_system, keyboard_system, mouse_button_system, pointer_move_system, scroll_system,
+    window_focus_system,
 };
 use crate::platform::{
     apply_ime_system, clipboard_system, ime_input_system, install_clipboard_hooks, ClipboardBridge,
@@ -26,7 +27,7 @@ impl Default for ReposePluginSettings {
         Self {
             clear_alpha: 0.0,
             compose_every_frame: true,
-            msaa_samples: 1,
+            msaa_samples: 4,
             overlay: true,
         }
     }
@@ -92,6 +93,7 @@ impl Plugin for ReposePlugin {
                     scroll_system,
                     ime_input_system,
                     keyboard_system,
+                    cursor_left_system,
                     window_focus_system,
                 ),
             )

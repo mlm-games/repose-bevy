@@ -1,4 +1,5 @@
 use bevy::asset::RenderAssetUsages;
+use bevy::image::ImageSampler;
 use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat as BevyTexFormat};
 use bevy::ui::{FocusPolicy, Node, ZIndex};
@@ -65,6 +66,9 @@ fn create_renderer(msaa: u32) -> WgpuSceneRenderer {
     ))
     .expect("repose-bevy: no wgpu adapter");
 
+    let format = wgpu::TextureFormat::Rgba8UnormSrgb;
+    let msaa = super::pick_msaa(&adapter, msaa.max(1), format);
+
     let (device, queue) = pollster::block_on(adapter.request_device(
         &wgpu::DeviceDescriptor {
             label: Some("repose-bevy-offscreen"),
@@ -77,7 +81,7 @@ fn create_renderer(msaa: u32) -> WgpuSceneRenderer {
     ))
     .expect("repose-bevy: device");
 
-    WgpuSceneRenderer::from_device(device, queue, wgpu::TextureFormat::Rgba8UnormSrgb, msaa.max(1))
+    WgpuSceneRenderer::from_device(device, queue, format, msaa)
 }
 
 fn setup_overlay(
@@ -98,6 +102,7 @@ fn setup_overlay(
     );
     image.texture_descriptor.usage = bevy::render::render_resource::TextureUsages::TEXTURE_BINDING
         | bevy::render::render_resource::TextureUsages::COPY_DST;
+    image.sampler = ImageSampler::nearest();
 
     let handle = images.add(image);
     commands.insert_resource(ReposeUiImage {
