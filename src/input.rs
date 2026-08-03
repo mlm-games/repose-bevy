@@ -1,12 +1,10 @@
-use bevy::input::mouse::{MouseButtonInput, MouseWheel};
-use bevy::input::keyboard::{Key as BevyKey, KeyboardInput};
 use bevy::input::ButtonState;
+use bevy::input::keyboard::{Key as BevyKey, KeyboardInput};
+use bevy::input::mouse::{MouseButtonInput, MouseWheel};
 use bevy::prelude::*;
 use bevy::window::{CursorLeft, CursorMoved, PrimaryWindow, WindowEvent, WindowFocused};
-use repose_core::input::{
-    Key, KeyEvent, KeyEventType, Modifiers, PointerButton,
-};
 use repose_core::Vec2;
+use repose_core::input::{Key, KeyEvent, KeyEventType, Modifiers, PointerButton};
 
 use crate::state::ReposeState;
 
@@ -23,7 +21,11 @@ fn modifiers_from_input(keys: &ButtonInput<KeyCode>) -> Modifiers {
     let ctrl = keys.pressed(KeyCode::ControlLeft) || keys.pressed(KeyCode::ControlRight);
     let alt = keys.pressed(KeyCode::AltLeft) || keys.pressed(KeyCode::AltRight);
     let meta = keys.pressed(KeyCode::SuperLeft) || keys.pressed(KeyCode::SuperRight);
-    let command = if cfg!(target_os = "macos") { meta } else { ctrl };
+    let command = if cfg!(target_os = "macos") {
+        meta
+    } else {
+        ctrl
+    };
     Modifiers {
         shift,
         ctrl,
@@ -47,7 +49,13 @@ pub fn pointer_move_system(
     for event in window_events.read() {
         if let WindowEvent::CursorMoved(CursorMoved { position, .. }) = event {
             state.runtime.pointer_inside = true;
-            let pos = physical_pos(window, Vec2 { x: position.x, y: position.y });
+            let pos = physical_pos(
+                window,
+                Vec2 {
+                    x: position.x,
+                    y: position.y,
+                },
+            );
             let _ = state.runtime.handle_pointer_move(pos);
         }
     }
@@ -77,8 +85,16 @@ pub fn mouse_button_system(
     };
     state.runtime.modifiers = modifiers_from_input(&keys);
 
-    let cursor_pos = window.cursor_position().unwrap_or(bevy::prelude::Vec2::ZERO);
-    let pos = physical_pos(window, Vec2 { x: cursor_pos.x, y: cursor_pos.y });
+    let cursor_pos = window
+        .cursor_position()
+        .unwrap_or(bevy::prelude::Vec2::ZERO);
+    let pos = physical_pos(
+        window,
+        Vec2 {
+            x: cursor_pos.x,
+            y: cursor_pos.y,
+        },
+    );
 
     for ev in button_events.read() {
         let button = match ev.button {
@@ -100,10 +116,7 @@ pub fn mouse_button_system(
     }
 }
 
-pub fn scroll_system(
-    mut wheel: MessageReader<MouseWheel>,
-    mut state: NonSendMut<ReposeState>,
-) {
+pub fn scroll_system(mut wheel: MessageReader<MouseWheel>, mut state: NonSendMut<ReposeState>) {
     for ev in wheel.read() {
         let scale = match ev.unit {
             bevy::input::mouse::MouseScrollUnit::Line => 32.0,

@@ -4,7 +4,11 @@ use repose_render_wgpu::WgpuSceneRenderer;
 pub fn apply_render_commands(renderer: &mut WgpuSceneRenderer, cmds: Vec<RenderCommand>) {
     for cmd in cmds {
         match cmd {
-            RenderCommand::SetImageEncoded { handle, bytes, srgb } => {
+            RenderCommand::SetImageEncoded {
+                handle,
+                bytes,
+                srgb,
+            } => {
                 if let Err(e) = renderer.set_image_from_bytes(handle, &bytes, srgb) {
                     bevy::log::warn!("repose-bevy: SetImageEncoded({handle}): {e:#}");
                 }

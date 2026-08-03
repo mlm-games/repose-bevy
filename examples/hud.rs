@@ -18,10 +18,7 @@ struct SharedInner {
 }
 
 fn main() {
-    let shared = Arc::new(Mutex::new(SharedInner {
-        hp: 100,
-        score: 0,
-    }));
+    let shared = Arc::new(Mutex::new(SharedInner { hp: 100, score: 0 }));
     let shared_ui = shared.clone();
     let heal_flag = Arc::new(AtomicBool::new(false));
     let heal_flag_ui = heal_flag.clone();
@@ -65,35 +62,27 @@ fn hud_ui(
     let state = shared.lock().unwrap();
     let heal = heal_flag.clone();
 
-    Row(
-        Modifier::new()
-            .padding(16.0)
-            .gap(24.0)
-            .fill_max_width()
-            .background(ReposeColor::from_rgba(20, 20, 30, 200))
-            .clip_rounded(8.0),
-    )
+    Row(Modifier::new()
+        .padding(16.0)
+        .gap(24.0)
+        .fill_max_width()
+        .background(ReposeColor::from_rgba(20, 20, 30, 200))
+        .clip_rounded(8.0))
     .child((
         Text(format!("HP: {: >3}", state.hp)),
         Spacer(),
         Text(format!("Score: {: >5}", state.score)),
         Spacer(),
-        Box(
-            Modifier::new()
-                .padding(12.0)
-                .background(ReposeColor::from_rgba(60, 60, 80, 255))
-                .clip_rounded(4.0)
-                .on_click(move || heal.store(true, Ordering::Relaxed)),
-        )
+        Box(Modifier::new()
+            .padding(12.0)
+            .background(ReposeColor::from_rgba(60, 60, 80, 255))
+            .clip_rounded(4.0)
+            .on_click(move || heal.store(true, Ordering::Relaxed)))
         .child(Text("+10 HP".to_string())),
     ))
 }
 
-fn tick_game(
-    time: Res<Time>,
-    shared: Res<SharedState>,
-    keys: Res<ButtonInput<KeyCode>>,
-) {
+fn tick_game(time: Res<Time>, shared: Res<SharedState>, keys: Res<ButtonInput<KeyCode>>) {
     if keys.just_pressed(KeyCode::Space) {
         let mut state = shared.inner.lock().unwrap();
         state.score += 10;

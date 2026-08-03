@@ -8,7 +8,7 @@ use crate::input::{
     window_focus_system,
 };
 use crate::platform::{
-    apply_ime_system, clipboard_system, ime_input_system, install_clipboard_hooks, ClipboardBridge,
+    ClipboardBridge, apply_ime_system, clipboard_system, ime_input_system, install_clipboard_hooks,
 };
 use crate::render::ReposeRenderPlugin;
 use crate::state::{ReposeOutput, ReposeState};

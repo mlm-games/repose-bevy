@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use parking_lot::Mutex;
+use std::sync::Arc;
 
 use bevy::prelude::*;
 use bevy::window::{Ime, PrimaryWindow};
@@ -40,9 +40,7 @@ pub fn install_clipboard_hooks(bridge: ClipboardBridge) {
     }));
 
     let rb = bridge;
-    repose_core::clipboard::set_clipboard_read_fn(Box::new(move || {
-        rb.0.lock().cached_read.take()
-    }));
+    repose_core::clipboard::set_clipboard_read_fn(Box::new(move || rb.0.lock().cached_read.take()));
 }
 
 /// Sync clipboard writes from Repose output to Bevy's Clipboard resource,
@@ -95,10 +93,7 @@ pub fn apply_ime_system(
 }
 
 /// Forward Bevy IME messages into ReposeRuntime.
-pub fn ime_input_system(
-    mut events: MessageReader<Ime>,
-    mut state: NonSendMut<ReposeState>,
-) {
+pub fn ime_input_system(mut events: MessageReader<Ime>, mut state: NonSendMut<ReposeState>) {
     for ev in events.read() {
         let ime = match ev {
             Ime::Enabled { .. } => ImeEvent::Start,

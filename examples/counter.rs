@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use repose_bevy::ReposePlugin;
-use repose_core::prelude::{remember_state, Color as ReposeColor, Modifier};
+use repose_core::prelude::{Color as ReposeColor, Modifier, remember_state};
 use repose_ui::{Column, Text, ViewExt};
 
 fn main() {
@@ -38,17 +38,13 @@ fn counter_ui() -> repose_core::prelude::View {
     .child((
         Text("Repose inside Bevy".to_string()),
         Text(format!("Count: {}", *count.borrow())),
-        repose_ui::Box(
-            Modifier::new().on_click(move || {
-                *inc.borrow_mut() += 1;
-            }),
-        )
+        repose_ui::Box(Modifier::new().on_click(move || {
+            *inc.borrow_mut() += 1;
+        }))
         .child(Text("Increment".to_string())),
-        repose_ui::Box(
-            Modifier::new().on_click(move || {
-                *reset.borrow_mut() = 0;
-            }),
-        )
+        repose_ui::Box(Modifier::new().on_click(move || {
+            *reset.borrow_mut() = 0;
+        }))
         .child(Text("Reset".to_string())),
     ))
 }

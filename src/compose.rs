@@ -56,8 +56,7 @@ pub fn compose_repose_system(
     let wants_pointer = !frame.hit_regions.is_empty()
         || state.runtime.hover_id.is_some()
         || state.runtime.capture_id.is_some();
-    let wants_keyboard =
-        !state.runtime.textfield_states.is_empty() || state.runtime.ime_preedit;
+    let wants_keyboard = !state.runtime.textfield_states.is_empty() || state.runtime.ime_preedit;
 
     let ime_allowed = state.runtime.sched.focused.map_or(false, |fid| {
         frame

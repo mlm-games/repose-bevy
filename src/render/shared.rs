@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
+use bevy::image::ImageSampler;
 use bevy::prelude::*;
 use bevy::render::extract_resource::{ExtractResource, ExtractResourcePlugin};
 use bevy::render::render_asset::RenderAssets;
 use bevy::render::render_resource::TextureUsages;
 use bevy::render::renderer::{RenderAdapter, RenderContext, RenderDevice, RenderQueue};
 use bevy::render::texture::GpuImage;
-use bevy::image::ImageSampler;
 use bevy::render::{ExtractSchedule, Render, RenderApp};
 use parking_lot::Mutex;
 use repose_core::RenderCommand;
@@ -99,9 +99,8 @@ fn setup_overlay(
         bevy::render::render_resource::TextureFormat::Rgba8UnormSrgb,
         bevy::asset::RenderAssetUsages::MAIN_WORLD | bevy::asset::RenderAssetUsages::RENDER_WORLD,
     );
-    image.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
-        | TextureUsages::COPY_DST
-        | TextureUsages::RENDER_ATTACHMENT;
+    image.texture_descriptor.usage =
+        TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST | TextureUsages::RENDER_ATTACHMENT;
     image.sampler = ImageSampler::nearest();
 
     let handle = images.add(image);

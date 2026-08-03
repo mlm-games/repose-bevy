@@ -2,8 +2,8 @@ use bevy::asset::RenderAssetUsages;
 use bevy::image::ImageSampler;
 use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat as BevyTexFormat};
-use bevy::ui::{FocusPolicy, Node, ZIndex};
 use bevy::ui::widget::{ImageNode, NodeImageMode};
+use bevy::ui::{FocusPolicy, Node, ZIndex};
 use parking_lot::Mutex;
 use repose_render_wgpu::WgpuSceneRenderer;
 use std::sync::Arc;
@@ -56,29 +56,25 @@ impl Plugin for OffscreenRenderPlugin {
 
 fn create_renderer(msaa: u32) -> WgpuSceneRenderer {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let adapter = pollster::block_on(instance.request_adapter(
-        &wgpu::RequestAdapterOptions {
-            power_preference: wgpu::PowerPreference::HighPerformance,
-            force_fallback_adapter: false,
-            compatible_surface: None,
-            apply_limit_buckets: false,
-        },
-    ))
+    let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+        power_preference: wgpu::PowerPreference::HighPerformance,
+        force_fallback_adapter: false,
+        compatible_surface: None,
+        apply_limit_buckets: false,
+    }))
     .expect("repose-bevy: no wgpu adapter");
 
     let format = wgpu::TextureFormat::Rgba8UnormSrgb;
     let msaa = super::pick_msaa(&adapter, msaa.max(1), format);
 
-    let (device, queue) = pollster::block_on(adapter.request_device(
-        &wgpu::DeviceDescriptor {
-            label: Some("repose-bevy-offscreen"),
-            required_features: wgpu::Features::empty(),
-            required_limits: wgpu::Limits::default(),
-            memory_hints: wgpu::MemoryHints::Performance,
-            experimental_features: wgpu::ExperimentalFeatures::default(),
-            trace: wgpu::Trace::Off,
-        },
-    ))
+    let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+        label: Some("repose-bevy-offscreen"),
+        required_features: wgpu::Features::empty(),
+        required_limits: wgpu::Limits::default(),
+        memory_hints: wgpu::MemoryHints::Performance,
+        experimental_features: wgpu::ExperimentalFeatures::default(),
+        trace: wgpu::Trace::Off,
+    }))
     .expect("repose-bevy: device");
 
     WgpuSceneRenderer::from_device(device, queue, format, msaa)
@@ -154,20 +150,23 @@ fn ensure_target(inner: &mut OffscreenInner, w: u32, h: u32) {
 
     inner.renderer.resize(w, h);
 
-    let texture = inner.renderer.device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("repose-bevy-target"),
-        size: wgpu::Extent3d {
-            width: w,
-            height: h,
-            depth_or_array_layers: 1,
-        },
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::Rgba8UnormSrgb,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
-        view_formats: &[],
-    });
+    let texture = inner
+        .renderer
+        .device
+        .create_texture(&wgpu::TextureDescriptor {
+            label: Some("repose-bevy-target"),
+            size: wgpu::Extent3d {
+                width: w,
+                height: h,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
     let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
     let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
@@ -175,12 +174,15 @@ fn ensure_target(inner: &mut OffscreenInner, w: u32, h: u32) {
     let bytes_per_row = (unpadded + align - 1) / align * align;
     let staging_size = (bytes_per_row * h) as u64;
 
-    let staging = inner.renderer.device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("repose-bevy-staging"),
-        size: staging_size,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
+    let staging = inner
+        .renderer
+        .device
+        .create_buffer(&wgpu::BufferDescriptor {
+            label: Some("repose-bevy-staging"),
+            size: staging_size,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
 
     inner.target = Some(TargetTex {
         texture,
@@ -208,12 +210,13 @@ fn render_offscreen_system(
     apply_render_commands(&mut inner.renderer, cmds);
     ensure_target(&mut inner, w, h);
 
-    let mut encoder = inner
-        .renderer
-        .device
-        .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("repose-bevy-enc"),
-        });
+    let mut encoder =
+        inner
+            .renderer
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("repose-bevy-enc"),
+            });
 
     let clear = Some([0.0, 0.0, 0.0, inner.clear_alpha as f64]);
 
@@ -262,13 +265,10 @@ fn render_offscreen_system(
     slice.map_async(wgpu::MapMode::Read, move |r| {
         let _ = tx.send(r);
     });
-    let _ = inner
-        .renderer
-        .device
-        .poll(wgpu::PollType::Wait {
-            submission_index: None,
-            timeout: None,
-        });
+    let _ = inner.renderer.device.poll(wgpu::PollType::Wait {
+        submission_index: None,
+        timeout: None,
+    });
     if rx.recv().ok().and_then(|r| r.ok()).is_none() {
         return;
     }
