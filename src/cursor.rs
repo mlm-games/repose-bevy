@@ -8,6 +8,7 @@ pub fn apply_cursor_system(
     output: Res<ReposeOutput>,
     windows: Query<Entity, With<PrimaryWindow>>,
     mut commands: Commands,
+    mut last: Local<Option<SystemCursorIcon>>,
 ) {
     if !output.is_changed() {
         return;
@@ -24,5 +25,9 @@ pub fn apply_cursor_system(
         ReposeCursor::Grab => SystemCursorIcon::Grab,
         ReposeCursor::Grabbing => SystemCursorIcon::Grabbing,
     };
+    if *last == Some(icon) {
+        return;
+    }
+    *last = Some(icon);
     commands.entity(entity).insert(CursorIcon::System(icon));
 }

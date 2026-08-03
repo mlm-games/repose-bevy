@@ -81,11 +81,11 @@ pub fn compose_repose_system(
         None
     };
 
-    let cursor = state.runtime.take_cursor_suggestion();
-
     state.scene = frame.scene.clone();
     state.runtime.reconcile_hover_from_mouse_pos(&frame);
     state.runtime.cache_frame(frame);
+
+    let cursor = state.runtime.cursor_suggestion();
 
     output.cursor = cursor;
     output.ime_allowed = ime_allowed;
