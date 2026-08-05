@@ -184,7 +184,7 @@ fn prepare_extract_frame(
         });
     }
 
-    *cmd_queue.0.lock() = state.render_ctx.drain();
+    cmd_queue.0.lock().extend(state.render_ctx.drain());
 
     frame.scene = state.scene.clone();
     frame.width = w;
