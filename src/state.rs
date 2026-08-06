@@ -50,6 +50,10 @@ pub struct ReposeOutput {
     pub clipboard_text: Option<String>,
     pub wants_pointer: bool,
     pub wants_keyboard: bool,
+    /// True from the frame a pointer press was consumed by UI until the button
+    /// is released. Lets consumers block world input (e.g. drag-place) while
+    /// the pointer is captured by a UI element.
+    pub pointer_consumed: bool,
     pub needs_redraw: bool,
 }
 

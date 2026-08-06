@@ -6,7 +6,7 @@ use bevy::window::{CursorLeft, CursorMoved, PrimaryWindow, WindowEvent, WindowFo
 use repose_core::Vec2;
 use repose_core::input::{Key, KeyEvent, KeyEventType, Modifiers, PointerButton};
 
-use crate::state::ReposeState;
+use crate::state::{ReposeOutput, ReposeState};
 
 fn physical_pos(window: &Window, logical: Vec2) -> Vec2 {
     let sf = window.resolution.scale_factor();
@@ -79,6 +79,7 @@ pub fn mouse_button_system(
     windows: Query<&Window, With<PrimaryWindow>>,
     keys: Res<ButtonInput<KeyCode>>,
     mut state: NonSendMut<ReposeState>,
+    mut output: ResMut<ReposeOutput>,
 ) {
     let Ok(window) = windows.single() else {
         return;
@@ -105,11 +106,13 @@ pub fn mouse_button_system(
         };
         match ev.state {
             ButtonState::Pressed => {
-                let _ = state.runtime.handle_pointer_press(pos, button);
+                let result = state.runtime.handle_pointer_press(pos, button);
+                output.pointer_consumed = result.consumed;
                 state.force_compose = true;
             }
             ButtonState::Released => {
                 state.runtime.handle_pointer_release(pos, button);
+                output.pointer_consumed = false;
                 state.force_compose = true;
             }
         }
