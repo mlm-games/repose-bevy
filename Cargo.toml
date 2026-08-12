@@ -11,7 +11,7 @@ categories = ["game-development", "gui"]
 rust-version = "1.96"
 
 [features]
-default = ["offscreen"]
+default = ["shared-device"]
 offscreen = ["dep:pollster", "dep:image"]
 shared-device = []
 
