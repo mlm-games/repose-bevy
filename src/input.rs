@@ -37,6 +37,7 @@ fn modifiers_from_input(keys: &ButtonInput<KeyCode>) -> Modifiers {
 
 pub fn pointer_move_system(
     mut window_events: MessageReader<WindowEvent>,
+    mut cursor_moved: MessageReader<CursorMoved>, // direct path
     windows: Query<&Window, With<PrimaryWindow>>,
     keys: Res<ButtonInput<KeyCode>>,
     mut state: NonSendMut<ReposeState>,
@@ -46,17 +47,37 @@ pub fn pointer_move_system(
     };
     state.runtime.modifiers = modifiers_from_input(&keys);
 
+    let mut moved = false;
+    let mut last = None;
+
     for event in window_events.read() {
         if let WindowEvent::CursorMoved(CursorMoved { position, .. }) = event {
-            state.runtime.pointer_inside = true;
-            let pos = physical_pos(
-                window,
-                Vec2 {
-                    x: position.x,
-                    y: position.y,
-                },
-            );
-            let _ = state.runtime.handle_pointer_move(pos);
+            last = Some(*position);
+            moved = true;
+        }
+    }
+    for ev in cursor_moved.read() {
+        last = Some(ev.position);
+        moved = true;
+    }
+
+    if last.is_none() {
+        last = window.cursor_position();
+    }
+
+    if let Some(position) = last {
+        state.runtime.pointer_inside = true;
+        let pos = physical_pos(
+            window,
+            Vec2 {
+                x: position.x,
+                y: position.y,
+            },
+        );
+        let before = state.runtime.hover_id;
+        let _ = state.runtime.handle_pointer_move(pos);
+        if moved || state.runtime.hover_id != before {
+            state.force_compose = true;
         }
     }
 }
