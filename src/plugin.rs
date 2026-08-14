@@ -1,11 +1,15 @@
 use bevy::prelude::*;
-use std::sync::Mutex;
+use std::{
+    collections::HashSet,
+    hash::{Hash, Hasher},
+    sync::{Mutex, OnceLock},
+};
 
 use crate::compose::{compose_repose_system, sync_viewport_system};
 use crate::cursor::apply_cursor_system;
 use crate::input::{
-    cursor_left_system, keyboard_system, mouse_button_system, pointer_move_system, scroll_system,
-    window_focus_system,
+    cursor_left_system, keyboard_system, mouse_button_system, pointer_move_system,
+    refresh_pointer_hover_system, scroll_system, window_focus_system,
 };
 use crate::platform::{
     ClipboardBridge, apply_ime_system, clipboard_system, ime_input_system, install_clipboard_hooks,
@@ -33,9 +37,22 @@ impl Default for ReposePluginSettings {
     }
 }
 
+fn register_font_once(bytes: &'static [u8]) {
+    static REGISTERED: OnceLock<Mutex<HashSet<(u64, usize)>>> = OnceLock::new();
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    bytes.hash(&mut hasher);
+    let key = (hasher.finish(), bytes.len());
+    let registered = REGISTERED.get_or_init(|| Mutex::new(HashSet::new()));
+    let mut registered = registered.lock().unwrap();
+    if registered.insert(key) {
+        repose_text::register_font_data(bytes);
+    }
+}
+
 pub struct ReposePlugin {
     pub settings: ReposePluginSettings,
     root: Mutex<Option<Box<dyn FnMut(&mut Scheduler, &RenderContext) -> View + Send + 'static>>>,
+    fonts: Vec<&'static [u8]>,
 }
 
 impl ReposePlugin {
@@ -46,6 +63,7 @@ impl ReposePlugin {
         Self {
             settings: ReposePluginSettings::default(),
             root: Mutex::new(Some(Box::new(root))),
+            fonts: Vec::new(),
         }
     }
 
@@ -56,7 +74,13 @@ impl ReposePlugin {
         Self {
             settings,
             root: Mutex::new(Some(Box::new(root))),
+            fonts: Vec::new(),
         }
+    }
+
+    pub fn with_font_bytes(mut self, bytes: &'static [u8]) -> Self {
+        self.fonts.push(bytes);
+        self
     }
 }
 
@@ -65,6 +89,10 @@ pub struct ReposeSettingsRes(pub ReposePluginSettings);
 
 impl Plugin for ReposePlugin {
     fn build(&self, app: &mut App) {
+        for font in &self.fonts {
+            register_font_once(font);
+        }
+
         let settings = self.settings.clone();
 
         let root = self
@@ -101,6 +129,7 @@ impl Plugin for ReposePlugin {
                 Update,
                 (
                     compose_repose_system,
+                    refresh_pointer_hover_system,
                     apply_cursor_system,
                     apply_ime_system,
                     clipboard_system,

@@ -8,6 +8,29 @@ use repose_core::input::{Key, KeyEvent, KeyEventType, Modifiers, PointerButton};
 
 use crate::state::{ReposeOutput, ReposeState};
 
+pub(crate) fn refresh_pointer_hover_system(
+    windows: Query<&Window, With<PrimaryWindow>>,
+    mut state: NonSendMut<crate::state::ReposeState>,
+) {
+    let Ok(window) = windows.single() else {
+        return;
+    };
+    let Some(cursor) = window.cursor_position() else {
+        return;
+    };
+    let scale_factor = window.resolution.scale_factor();
+    let position = Vec2 {
+        x: cursor.x * scale_factor,
+        y: cursor.y * scale_factor,
+    };
+    let previous_hover = state.runtime.hover_id;
+    state.runtime.pointer_inside = true;
+    let _ = state.runtime.handle_pointer_move(position);
+    if state.runtime.hover_id != previous_hover {
+        state.force_compose = true;
+    }
+}
+
 fn physical_pos(window: &Window, logical: Vec2) -> Vec2 {
     let sf = window.resolution.scale_factor();
     Vec2 {
