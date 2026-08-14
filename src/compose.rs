@@ -53,11 +53,10 @@ pub fn compose_repose_system(
     let frame = state.runtime.compose(&mut root, &render_ctx);
     state.root = root;
 
-    let wants_pointer =
-        state.runtime.hover_id.is_some() || state.runtime.capture_id.is_some();
+    let wants_pointer = state.runtime.hover_id.is_some() || state.runtime.capture_id.is_some();
     let wants_keyboard = !state.runtime.textfield_states.is_empty() || state.runtime.ime_preedit;
 
-    let ime_allowed = state.runtime.sched.focused.map_or(false, |fid| {
+    let ime_allowed = state.runtime.sched.focused.is_some_and(|fid| {
         frame
             .semantics_nodes
             .iter()

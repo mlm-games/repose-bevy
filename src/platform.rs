@@ -16,20 +16,12 @@ impl Default for ClipboardBridge {
     }
 }
 
+#[derive(Default)]
 pub struct ClipboardState {
     /// Text Repose wants written to the OS clipboard (via `set_clipboard_fn`).
     pub pending_write: Option<String>,
     /// Text fetched from Bevy clipboard, ready for `paste_text()` reads.
     pub cached_read: Option<String>,
-}
-
-impl Default for ClipboardState {
-    fn default() -> Self {
-        Self {
-            pending_write: None,
-            cached_read: None,
-        }
-    }
 }
 
 /// Install Repose clipboard hooks that bridge through the shared state.

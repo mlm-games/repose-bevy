@@ -142,10 +142,12 @@ fn setup_overlay(
 fn ensure_target(inner: &mut OffscreenInner, w: u32, h: u32) {
     let w = w.max(1);
     let h = h.max(1);
-    if let Some(t) = &inner.target {
-        if t.width == w && t.height == h {
-            return;
-        }
+    if inner
+        .target
+        .as_ref()
+        .is_some_and(|t| t.width == w && t.height == h)
+    {
+        return;
     }
 
     inner.renderer.resize(w, h);
@@ -171,7 +173,7 @@ fn ensure_target(inner: &mut OffscreenInner, w: u32, h: u32) {
 
     let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
     let unpadded = w * 4;
-    let bytes_per_row = (unpadded + align - 1) / align * align;
+    let bytes_per_row = unpadded.div_ceil(align) * align;
     let staging_size = (bytes_per_row * h) as u64;
 
     let staging = inner
