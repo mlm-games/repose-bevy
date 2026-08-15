@@ -61,7 +61,6 @@ pub fn compose_repose_system(
     };
 
     state.scene = frame_out.scene;
-    state.runtime.reconcile_hover_from_mouse_pos(&frame);
     state.runtime.cache_frame(frame);
 
     output.cursor = frame_out.platform.cursor;

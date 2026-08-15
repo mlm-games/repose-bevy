@@ -226,7 +226,7 @@ pub fn keyboard_system(
             event_type,
             utf16_code_point: utf16,
         };
-        if state.runtime.handle_key(&ke) {
+        if state.runtime.handle_key_with_text(&ke, ev.text.as_deref()) {
             state.force_compose = true;
         }
     }
