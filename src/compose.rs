@@ -50,52 +50,32 @@ pub fn compose_repose_system(
         Box::new(|_: &mut Scheduler, _: &RenderContext| View::new(0, ViewKind::Box)),
     );
     let render_ctx = state.render_ctx.clone();
-    let frame = state.runtime.compose(&mut root, &render_ctx);
+    let frame_out = state.runtime.frame(&mut root, &render_ctx);
     state.root = root;
 
-    let wants_pointer = state.runtime.hover_id.is_some() || state.runtime.capture_id.is_some();
-    let wants_keyboard = !state.runtime.textfield_states.is_empty() || state.runtime.ime_preedit;
-
-    let ime_allowed = state.runtime.sched.focused.is_some_and(|fid| {
-        frame
-            .semantics_nodes
-            .iter()
-            .any(|n| n.id == fid && n.role == repose_core::semantics::Role::TextField)
-    });
-
-    let ime_cursor_area = if ime_allowed {
-        state.runtime.sched.focused.and_then(|fid| {
-            frame.hit_regions.iter().find(|h| h.id == fid).map(|hit| {
-                let sf = state.scale_factor as f64;
-                (
-                    hit.rect.x as f64 / sf,
-                    hit.rect.y as f64 / sf,
-                    hit.rect.w as f64 / sf,
-                    hit.rect.h as f64 / sf,
-                )
-            })
-        })
-    } else {
-        None
+    let frame = repose_core::runtime::Frame {
+        scene: frame_out.scene.clone(),
+        hit_regions: frame_out.hit_regions,
+        semantics_nodes: frame_out.semantics_nodes,
+        focus_chain: frame_out.focus_chain,
     };
 
-    state.scene = frame.scene.clone();
+    state.scene = frame_out.scene;
+    state.runtime.reconcile_hover_from_mouse_pos(&frame);
     state.runtime.cache_frame(frame);
 
-    let cursor = state.runtime.cursor_suggestion();
-
-    output.cursor = cursor;
-    output.ime_allowed = ime_allowed;
-    output.ime_cursor_area = ime_cursor_area;
-    output.clipboard_text = None;
-    output.wants_pointer = wants_pointer;
-    output.wants_keyboard = wants_keyboard;
+    output.cursor = frame_out.platform.cursor;
+    output.ime_allowed = frame_out.platform.ime_allowed;
+    output.ime_cursor_area = frame_out.platform.ime_cursor_area;
+    output.clipboard_text = frame_out.platform.clipboard_text;
+    output.wants_pointer = frame_out.wants_pointer;
+    output.wants_keyboard = frame_out.wants_keyboard;
     output.needs_redraw = true;
 
     state.force_compose = false;
-    state.last_output.wants_pointer = wants_pointer;
-    state.last_output.wants_keyboard = wants_keyboard;
-    state.last_output.platform_cursor = cursor;
-    state.last_output.ime_allowed = ime_allowed;
-    state.last_output.ime_cursor_area = ime_cursor_area;
+    state.last_output.wants_pointer = frame_out.wants_pointer;
+    state.last_output.wants_keyboard = frame_out.wants_keyboard;
+    state.last_output.platform_cursor = frame_out.platform.cursor;
+    state.last_output.ime_allowed = frame_out.platform.ime_allowed;
+    state.last_output.ime_cursor_area = frame_out.platform.ime_cursor_area;
 }
