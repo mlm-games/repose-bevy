@@ -8,8 +8,8 @@ use std::{
 use crate::compose::{compose_repose_system, sync_viewport_system};
 use crate::cursor::apply_cursor_system;
 use crate::input::{
-    cursor_left_system, keyboard_system, mouse_button_system, pointer_move_system,
-    refresh_pointer_hover_system, scroll_system, window_focus_system,
+    cursor_left_system, keyboard_system, mouse_button_system, pointer_move_system, scroll_system,
+    window_focus_system,
 };
 use crate::platform::{
     ClipboardBridge, apply_ime_system, clipboard_system, ime_input_system, install_clipboard_hooks,
@@ -129,7 +129,6 @@ impl Plugin for ReposePlugin {
                 Update,
                 (
                     compose_repose_system,
-                    refresh_pointer_hover_system,
                     apply_cursor_system,
                     apply_ime_system,
                     clipboard_system,
