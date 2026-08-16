@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use repose_app::PlatformOutput;
 use repose_core::{RenderContext, Scene, Scheduler, View};
 
 pub struct ReposeState {
@@ -10,17 +11,8 @@ pub struct ReposeState {
     pub scale_factor: f32,
     pub force_compose: bool,
     pub root: Box<dyn FnMut(&mut Scheduler, &RenderContext) -> View + Send + 'static>,
-    pub last_output: FrameOutputShell,
-}
-
-#[derive(Default)]
-pub struct FrameOutputShell {
-    pub platform_cursor: Option<repose_core::CursorIcon>,
-    pub ime_allowed: bool,
-    pub ime_cursor_area: Option<(f64, f64, f64, f64)>,
-    pub clipboard_text: Option<String>,
-    pub wants_pointer: bool,
-    pub wants_keyboard: bool,
+    pub last_platform: PlatformOutput,
+    pub last_redraw: web_time::Instant,
 }
 
 impl ReposeState {
@@ -37,7 +29,8 @@ impl ReposeState {
             scale_factor: 1.0,
             force_compose: true,
             root: Box::new(root),
-            last_output: FrameOutputShell::default(),
+            last_platform: PlatformOutput::default(),
+            last_redraw: web_time::Instant::now(),
         }
     }
 }
@@ -47,6 +40,9 @@ pub struct ReposeOutput {
     pub cursor: Option<repose_core::CursorIcon>,
     pub ime_allowed: bool,
     pub ime_cursor_area: Option<(f64, f64, f64, f64)>,
+    pub ime_purpose: repose_core::ImePurposeHint,
+    pub ime_auto_correct: bool,
+    pub ime_capitalization: repose_core::KeyboardCapitalization,
     pub clipboard_text: Option<String>,
     pub wants_pointer: bool,
     pub wants_keyboard: bool,

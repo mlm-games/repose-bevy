@@ -10,8 +10,8 @@ Targets Bevy **main branch** (0.20-dev, wgpu 30)
 - Input bridging (pointer, scroll, keyboard, IME)
 - IME support (enable/disable on text fields, cursor area, composition events)
 - Clipboard bridging (copy/paste between Repose and system clipboard)
-- **offscreen** (default): Repose `WgpuSceneRenderer` on separate wgpu device -> RGBA texture -> Bevy `Image` overlay
-- **shared-device** (optional): render into Bevy's UI Image using Bevy's wgpu device (avoids CPU readback)
+- **shared-device** (default): render into Bevy's UI Image using Bevy's wgpu device (avoids CPU readback)
+- **offscreen** (optional): Repose `WgpuSceneRenderer` on separate wgpu device -> RGBA texture -> Bevy `Image` overlay
 
 ## Quick start
 
@@ -64,5 +64,5 @@ Bevy render world
 
 | Feature | Default | Description |
 |---------|---------|-------------|
-| `offscreen` | yes | Separate wgpu device + staging buffer -> CPU readback -> Bevy `Image` |
-| `shared-device` | no | Bevy's `RenderDevice` to direct GPU render into UI `Image` |
+| `shared-device` | yes | Bevy's `RenderDevice` to direct GPU render into UI `Image` |
+| `offscreen` | no | Separate wgpu device + staging buffer -> CPU readback -> Bevy `Image` |

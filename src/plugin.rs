@@ -105,6 +105,9 @@ impl Plugin for ReposePlugin {
         let bridge = ClipboardBridge::default();
         install_clipboard_hooks(bridge.clone());
 
+        // NOTE: is already the default in animation/ but might change it later
+        // repose_core::animation::set_clock(Box::new(repose_core::animation::SystemClock));
+
         app.insert_resource(ReposeSettingsRes(settings.clone()))
             .insert_resource(ReposeOutput::default())
             .insert_resource(bridge)

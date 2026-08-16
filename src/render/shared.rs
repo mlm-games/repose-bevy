@@ -147,6 +147,7 @@ fn prepare_extract_frame(
     mut commands: Commands,
     state: NonSendMut<ReposeState>,
     settings: Res<SharedSettings>,
+    output: Res<crate::state::ReposeOutput>,
     mut frame: ResMut<ReposeExtractedFrame>,
     cmd_queue: Res<ReposeCmdQueue>,
     ui_image: Res<ReposeUiImage>,
@@ -186,7 +187,9 @@ fn prepare_extract_frame(
 
     cmd_queue.0.lock().extend(state.render_ctx.drain());
 
-    frame.scene = state.scene.clone();
+    if output.needs_redraw {
+        frame.scene = state.scene.clone();
+    }
     frame.width = w;
     frame.height = h;
     frame.clear_alpha = settings.clear_alpha;

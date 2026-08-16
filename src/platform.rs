@@ -53,7 +53,9 @@ pub fn clipboard_system(
         let _ = clipboard.set_text(&text);
     }
 
-    // Read: refresh cache on potential paste chord (Ctrl+V / Cmd+V)
+    // Read: refresh the cache on a paste chord (Ctrl+V / Cmd+V), then route
+    // the paste through the runtime action path so widget `on_action` handlers
+    // and IME/modifier guards apply exactly like the native hosts.
     let paste_chord = keys.pressed(KeyCode::ControlLeft)
         || keys.pressed(KeyCode::ControlRight)
         || keys.pressed(KeyCode::SuperLeft)
@@ -61,10 +63,13 @@ pub fn clipboard_system(
     if paste_chord && keys.just_pressed(KeyCode::KeyV) {
         let mut read = clipboard.fetch_text();
         if let Some(Ok(text)) = read.poll_result() {
-            // Inject paste directly for immediate handling
-            state.runtime.paste_into_focused(&text);
             b.cached_read = Some(text);
-            state.force_compose = true;
+            if state
+                .runtime
+                .dispatch_action(repose_core::shortcuts::Action::Paste)
+            {
+                state.force_compose = true;
+            }
         }
     }
 }
