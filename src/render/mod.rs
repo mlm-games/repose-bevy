@@ -2,9 +2,6 @@ use bevy::prelude::*;
 
 use crate::plugin::ReposePluginSettings;
 
-mod commands;
-pub(crate) use commands::apply_render_commands;
-
 #[cfg(feature = "offscreen")]
 mod offscreen;
 

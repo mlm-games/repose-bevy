@@ -12,7 +12,6 @@ use parking_lot::Mutex;
 use repose_core::RenderCommand;
 use repose_render_wgpu::WgpuSceneRenderer;
 
-use super::apply_render_commands;
 use crate::plugin::{ReposePluginSettings, ReposeSettingsRes};
 use crate::state::{ReposeState, ReposeUiImage};
 
@@ -248,7 +247,7 @@ fn render_shared_system(
 
     let cmds = frame.cmd_queue.0.lock().drain(..).collect::<Vec<_>>();
     let mut renderer = gpu.renderer.lock();
-    apply_render_commands(&mut renderer, cmds);
+    repose_render_wgpu::apply_render_commands(&mut renderer, cmds);
 
     let w = gpu_image.texture_descriptor.size.width.max(1);
     let h = gpu_image.texture_descriptor.size.height.max(1);

@@ -8,7 +8,6 @@ use parking_lot::Mutex;
 use repose_render_wgpu::WgpuSceneRenderer;
 use std::sync::Arc;
 
-use super::apply_render_commands;
 use crate::plugin::ReposePluginSettings;
 use crate::state::{ReposeState, ReposeUiImage};
 
@@ -209,7 +208,7 @@ fn render_offscreen_system(
     let scene = state.scene.clone();
 
     let mut inner = gpu.inner.lock();
-    apply_render_commands(&mut inner.renderer, cmds);
+    repose_render_wgpu::apply_render_commands(&mut inner.renderer, cmds);
     ensure_target(&mut inner, w, h);
 
     let mut encoder =
