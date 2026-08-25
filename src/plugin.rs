@@ -129,7 +129,7 @@ impl Plugin for ReposePlugin {
                 ),
             )
             .add_systems(
-                Update,
+                PostUpdate,
                 (
                     compose_repose_system,
                     apply_cursor_system,

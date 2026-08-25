@@ -12,6 +12,7 @@ use parking_lot::Mutex;
 use repose_core::RenderCommand;
 use repose_render_wgpu::WgpuSceneRenderer;
 
+use crate::compose::compose_repose_system;
 use crate::plugin::{ReposePluginSettings, ReposeSettingsRes};
 use crate::state::{ReposeState, ReposeUiImage};
 
@@ -71,7 +72,10 @@ impl Plugin for SharedDevicePlugin {
             })
             .add_plugins(ExtractResourcePlugin::<ReposeExtractedFrame>::default())
             .add_systems(Startup, setup_overlay)
-            .add_systems(PostUpdate, prepare_extract_frame);
+            .add_systems(
+                PostUpdate,
+                prepare_extract_frame.after(compose_repose_system),
+            );
 
         let render_app = app.sub_app_mut(RenderApp);
         render_app

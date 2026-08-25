@@ -8,6 +8,7 @@ use parking_lot::Mutex;
 use repose_render_wgpu::WgpuSceneRenderer;
 use std::sync::Arc;
 
+use crate::compose::compose_repose_system;
 use crate::plugin::ReposePluginSettings;
 use crate::state::{ReposeState, ReposeUiImage};
 
@@ -40,8 +41,10 @@ impl Plugin for OffscreenRenderPlugin {
         let msaa = self.settings.msaa_samples;
         let clear_alpha = self.settings.clear_alpha;
 
-        app.add_systems(Startup, setup_overlay)
-            .add_systems(PostUpdate, render_offscreen_system);
+        app.add_systems(Startup, setup_overlay).add_systems(
+            PostUpdate,
+            render_offscreen_system.after(compose_repose_system),
+        );
 
         app.insert_resource(OffscreenGpu {
             inner: Arc::new(Mutex::new(OffscreenInner {
