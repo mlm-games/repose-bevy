@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use bevy::image::ImageSampler;
 use bevy::prelude::*;
 use bevy::render::extract_resource::{ExtractResource, ExtractResourcePlugin};
 use bevy::render::render_asset::RenderAssets;
@@ -24,6 +23,7 @@ pub struct SharedDevicePlugin {
 struct SharedSettings {
     clear_alpha: f32,
     msaa_samples: u32,
+    sampler: bevy::image::ImageSampler,
 }
 
 #[derive(Resource, Clone)]
@@ -56,6 +56,7 @@ impl Plugin for SharedDevicePlugin {
         let settings = SharedSettings {
             clear_alpha: self.settings.clear_alpha,
             msaa_samples: self.settings.msaa_samples.max(1),
+            sampler: self.settings.sampler.clone(),
         };
 
         let cmd_queue = ReposeCmdQueue(Arc::new(Mutex::new(Vec::new())));
@@ -91,21 +92,8 @@ fn setup_overlay(
     settings: Res<ReposeSettingsRes>,
     mut frame: ResMut<ReposeExtractedFrame>,
 ) {
-    let mut image = Image::new_fill(
-        bevy::render::render_resource::Extent3d {
-            width: 1,
-            height: 1,
-            depth_or_array_layers: 1,
-        },
-        bevy::render::render_resource::TextureDimension::D2,
-        &[0, 0, 0, 0],
-        bevy::render::render_resource::TextureFormat::Rgba8UnormSrgb,
-        bevy::asset::RenderAssetUsages::MAIN_WORLD | bevy::asset::RenderAssetUsages::RENDER_WORLD,
-    );
-    image.texture_descriptor.usage =
-        TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST | TextureUsages::RENDER_ATTACHMENT;
-    image.sampler = ImageSampler::nearest();
-
+    let usage = TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST | TextureUsages::RENDER_ATTACHMENT;
+    let image = super::overlay_image(1, 1, usage, settings.0.sampler.clone());
     let handle = images.add(image);
     commands.insert_resource(ReposeUiImage {
         image: handle.clone(),
@@ -113,36 +101,8 @@ fn setup_overlay(
         height: 1,
     });
     frame.image = handle.clone();
-
     if settings.0.overlay {
-        commands
-            .spawn((
-                Node {
-                    position_type: PositionType::Absolute,
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    left: Val::Px(0.0),
-                    top: Val::Px(0.0),
-                    ..default()
-                },
-                bevy::ui::FocusPolicy::Pass,
-                bevy::ui::ZIndex(i32::MAX),
-                Name::new("ReposeOverlay"),
-            ))
-            .with_children(|p| {
-                p.spawn((
-                    Node {
-                        width: Val::Percent(100.0),
-                        height: Val::Percent(100.0),
-                        ..default()
-                    },
-                    bevy::ui::widget::ImageNode {
-                        image: handle,
-                        image_mode: bevy::ui::widget::NodeImageMode::Stretch,
-                        ..default()
-                    },
-                ));
-            });
+        super::spawn_overlay(&mut commands, handle);
     }
 }
 
@@ -176,7 +136,7 @@ fn prepare_extract_frame(
         image.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
             | TextureUsages::COPY_DST
             | TextureUsages::RENDER_ATTACHMENT;
-        image.sampler = ImageSampler::nearest();
+        image.sampler = settings.sampler.clone();
 
         if let Some(mut img) = images.get_mut(&ui_image.image) {
             *img = image;

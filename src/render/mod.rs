@@ -12,29 +12,66 @@ pub struct ReposeRenderPlugin {
     pub settings: ReposePluginSettings,
 }
 
-/// Pick the MSAA sample count for the offscreen UI target, honoring the
-/// requested count and falling back to the largest supported count <= it.
 pub fn pick_msaa(adapter: &wgpu::Adapter, requested: u32, format: wgpu::TextureFormat) -> u32 {
-    let color_feat = adapter.get_texture_format_features(format);
-    let depth_feat = adapter.get_texture_format_features(wgpu::TextureFormat::Depth24PlusStencil8);
-    let supported = |n: u32| {
-        color_feat.flags.sample_count_supported(n)
-            && color_feat
-                .flags
-                .contains(wgpu::TextureFormatFeatureFlags::MULTISAMPLE_RESOLVE)
-            && depth_feat.flags.sample_count_supported(n)
-    };
-    let mut candidates = vec![requested];
-    for n in [8, 4, 2, 1] {
-        if n < requested {
-            candidates.push(n);
-        }
-    }
-    let chosen = candidates.into_iter().find(|&n| supported(n)).unwrap_or(1);
-    if chosen != requested {
-        bevy::log::info!("repose-bevy: requested MSAA x{requested}, using x{chosen}");
-    }
-    chosen
+    repose_render_wgpu::pick_surface_msaa(adapter, format, requested)
+}
+
+pub fn overlay_image(
+    width: u32,
+    height: u32,
+    usage: bevy::render::render_resource::TextureUsages,
+    sampler: bevy::image::ImageSampler,
+) -> bevy::prelude::Image {
+    use bevy::asset::RenderAssetUsages;
+    use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat as BevyTexFormat};
+    let mut image = bevy::prelude::Image::new_fill(
+        Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
+        TextureDimension::D2,
+        &[0, 0, 0, 0],
+        BevyTexFormat::Rgba8UnormSrgb,
+        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+    );
+    image.texture_descriptor.usage = usage;
+    image.sampler = sampler;
+    image
+}
+
+pub fn spawn_overlay(commands: &mut bevy::prelude::Commands, handle: bevy::prelude::Handle<bevy::prelude::Image>) {
+    use bevy::prelude::*;
+    use bevy::ui::widget::{ImageNode, NodeImageMode};
+    use bevy::ui::{FocusPolicy, Node, ZIndex};
+    commands
+        .spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                left: Val::Px(0.0),
+                top: Val::Px(0.0),
+                ..default()
+            },
+            FocusPolicy::Pass,
+            ZIndex(i32::MAX),
+            Name::new("ReposeOverlay"),
+        ))
+        .with_children(|p| {
+            p.spawn((
+                Node {
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                    ..default()
+                },
+                ImageNode {
+                    image: handle,
+                    image_mode: NodeImageMode::Stretch,
+                    ..default()
+                },
+            ));
+        });
 }
 
 impl Plugin for ReposeRenderPlugin {

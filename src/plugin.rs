@@ -24,6 +24,7 @@ pub struct ReposePluginSettings {
     pub compose_every_frame: bool,
     pub msaa_samples: u32,
     pub overlay: bool,
+    pub sampler: bevy::image::ImageSampler,
 }
 
 impl Default for ReposePluginSettings {
@@ -33,6 +34,7 @@ impl Default for ReposePluginSettings {
             compose_every_frame: true,
             msaa_samples: 4,
             overlay: true,
+            sampler: bevy::image::ImageSampler::nearest(),
         }
     }
 }
