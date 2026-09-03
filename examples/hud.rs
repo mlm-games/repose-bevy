@@ -39,6 +39,7 @@ fn main() {
                 compose_every_frame: true,
                 msaa_samples: 1,
                 overlay: true,
+                ..Default::default()
             },
             move |_s, _c| hud_ui(&shared_ui, &heal_flag_ui),
         ))
