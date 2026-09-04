@@ -1626,9 +1626,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.4.4"
+version = "1.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ad534f4357a5264cce5019c989cf66a4f0dc4e0d1b1d15f8aacec0ff7360273"
+checksum = "005ec2760ca554fae18df7a11195552ec576cd665632a881bc011d5bb2fd4d80"
 dependencies = [
  "find-msvc-tools",
  "jobserver",
@@ -2076,9 +2076,9 @@ dependencies = [
 
 [[package]]
 name = "find-msvc-tools"
-version = "0.1.11"
+version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d45db016d36b838f563236e9193d0ee6ce38f3f68b6c94e914b4929c96bbb890"
+checksum = "3e0f1c7c3a72c66fd80abe965175f7523475c0489a87d3ff9d6e8c87d87a9d2d"
 
 [[package]]
 name = "fixedbitset"
@@ -3626,9 +3626,9 @@ checksum = "05c8b63e8d9609db387f0324918f81d68fe27748f084ef092fb35954d0539a85"
 
 [[package]]
 name = "portable-atomic-util"
-version = "0.2.7"
+version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2a106d1259c23fac8e543272398ae0e3c0b8d33c88ed73d0cc71b0f1d902618"
+checksum = "10ab3eb7f3becc3a1cbc4f2c6f20267996cfc1a6467a873763411b136a122715"
 dependencies = [
  "portable-atomic",
 ]
@@ -3865,9 +3865,9 @@ checksum = "19b30a45b0cd0bcca8037f3d0dc3421eaf95327a17cad11964fb8179b4fc4832"
 
 [[package]]
 name = "repose-app"
-version = "0.28.17"
+version = "0.28.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "893f0db2ee48bcfef59ddab857031b4cf8457ff18d5d6a3f49aee5e057416d1e"
+checksum = "9452fc54e887ebf69e56e1315655d160d5b32be29a4ad33765071cf057713dcc"
 dependencies = [
  "log",
  "repose-core",
@@ -3899,9 +3899,9 @@ dependencies = [
 
 [[package]]
 name = "repose-core"
-version = "0.28.17"
+version = "0.28.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6921813ca612e7111b9b2288b9cc6632b6ba314f41324937fb7fe06f5f7bfe21"
+checksum = "c59bce7fe1feb4ce99b2bfd2261ca508832874f72c208885f86bb4e056ff28b0"
 dependencies = [
  "bitflags 2.13.1",
  "log",
@@ -3917,9 +3917,9 @@ dependencies = [
 
 [[package]]
 name = "repose-macros"
-version = "0.28.17"
+version = "0.28.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c8d9367864c891caed8dee3afdd947b47ab52ebf9343d325b98db5ca45925f7"
+checksum = "5321e92772147d9b18323230b5a698862be299f003e2d3cf2c48ec7e7917cb49"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3928,9 +3928,9 @@ dependencies = [
 
 [[package]]
 name = "repose-render-wgpu"
-version = "0.28.17"
+version = "0.28.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d976e869b74af4a901ecd8a04a9dc4efdf95cde389f59dbe2a13a2a95bb1b3cc"
+checksum = "28a6ade8761cf47de4d29b706b090f4825d7caff0f8b72261afaa9117fd30eed"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -3947,9 +3947,9 @@ dependencies = [
 
 [[package]]
 name = "repose-text"
-version = "0.28.17"
+version = "0.28.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b63b2444140c78d5c33a4160d1be957112ea4d4010fd536b0c6e5dd8673428d"
+checksum = "14943fb67968cc8bcf90d50aec260ddda8c4f07365d008dc73e9618225b2882e"
 dependencies = [
  "font-awl",
  "js-sys",
@@ -3967,9 +3967,9 @@ dependencies = [
 
 [[package]]
 name = "repose-tree"
-version = "0.28.17"
+version = "0.28.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cbfae5ced65baa760d77e929105b38793bedf5282bafe64a5691f373bf3d2a2f"
+checksum = "ff4d6bfb6054b0a77d420287322a84a0bdbb0e1478d5400e586cd03dc0b5920a"
 dependencies = [
  "log",
  "rapidhash",
@@ -3981,9 +3981,9 @@ dependencies = [
 
 [[package]]
 name = "repose-ui"
-version = "0.28.17"
+version = "0.28.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "415912c51a82f74e6df84dee351ff98619291a1838a87f5ebb41e4060d1d8c26"
+checksum = "c9b2cc3948eeb447a83886b4695b09d3e871bb847a6247c66cbdb0c52f5968b5"
 dependencies = [
  "log",
  "repose-core",
@@ -4924,9 +4924,9 @@ dependencies = [
 
 [[package]]
 name = "web-workers"
-version = "0.3.5"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c19355971a4b93d1c6aaef97fd759ac187cc0354c9b9d6a3019f4d9aaad64a7"
+checksum = "4606593135f49a636c98f948be9b986525a05ea44a5181d12253df7084f5ac59"
 dependencies = [
  "atomic-waker",
  "continue",
