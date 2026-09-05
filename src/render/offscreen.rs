@@ -1,6 +1,8 @@
 use bevy::asset::RenderAssetUsages;
 use bevy::prelude::*;
-use bevy::render::render_resource::{Extent3d, TextureFormat as BevyTexFormat};
+use bevy::render::render_resource::{
+    Extent3d, TextureDimension, TextureFormat as BevyTexFormat,
+};
 use parking_lot::Mutex;
 use std::sync::Arc;
 
@@ -106,12 +108,12 @@ fn render_offscreen_system(
             bevy::render::render_resource::TextureUsages::TEXTURE_BINDING
                 | bevy::render::render_resource::TextureUsages::COPY_DST;
         image.sampler = inner.sampler.clone();
-        if let Some(img) = images.get_mut(&ui_image.image) {
+        if let Some(mut img) = images.get_mut(&ui_image.image) {
             *img = image;
         }
         ui_image.width = w;
         ui_image.height = h;
-    } else if let Some(img) = images.get_mut(&ui_image.image) {
+    } else if let Some(mut img) = images.get_mut(&ui_image.image) {
         if let Some(data) = img.data.as_mut() {
             data.copy_from_slice(&pixels);
         } else {

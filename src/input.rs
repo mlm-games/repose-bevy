@@ -37,7 +37,7 @@ fn modifiers_from_input(keys: &ButtonInput<KeyCode>) -> Modifiers {
 
 pub fn pointer_move_system(
     mut window_events: MessageReader<WindowEvent>,
-    mut cursor_moved: MessageReader<CursorMoved>, // direct path
+    mut cursor_moved: MessageReader<CursorMoved>,
     windows: Query<&Window, With<PrimaryWindow>>,
     keys: Res<ButtonInput<KeyCode>>,
     mut state: NonSendMut<ReposeState>,
@@ -137,19 +137,28 @@ pub fn mouse_button_system(
         match ev.state {
             ButtonState::Pressed => {
                 let result = state.runtime.handle_pointer_press(pos, button);
-                output.pointer_consumed = result.consumed;
+                if output.pointer_consumed != result.consumed {
+                    output.pointer_consumed = result.consumed;
+                }
                 state.force_compose = true;
             }
             ButtonState::Released => {
                 state.runtime.handle_pointer_release(pos, button);
-                output.pointer_consumed = false;
+                if output.pointer_consumed {
+                    output.pointer_consumed = false;
+                }
                 state.force_compose = true;
             }
         }
     }
 }
 
-pub fn scroll_system(mut wheel: MessageReader<MouseWheel>, mut state: NonSendMut<ReposeState>) {
+pub fn scroll_system(
+    mut wheel: MessageReader<MouseWheel>,
+    mut state: NonSendMut<ReposeState>,
+    mut output: ResMut<ReposeOutput>,
+) {
+    let mut any_consumed = false;
     for ev in wheel.read() {
         let scale = match ev.unit {
             bevy::input::mouse::MouseScrollUnit::Line => 32.0,
@@ -161,7 +170,11 @@ pub fn scroll_system(mut wheel: MessageReader<MouseWheel>, mut state: NonSendMut
         };
         if state.runtime.handle_scroll(delta) {
             state.force_compose = true;
+            any_consumed = true;
         }
+    }
+    if output.scroll_consumed != any_consumed {
+        output.scroll_consumed = any_consumed;
     }
 }
 
@@ -205,10 +218,12 @@ pub fn keyboard_system(
     mut events: MessageReader<KeyboardInput>,
     keys: Res<ButtonInput<KeyCode>>,
     mut state: NonSendMut<ReposeState>,
+    mut output: ResMut<ReposeOutput>,
 ) {
     let mods = modifiers_from_input(&keys);
     state.runtime.modifiers = mods;
 
+    let mut any_consumed = false;
     for ev in events.read() {
         let key = map_key(&ev.logical_key);
         let event_type = match ev.state {
@@ -228,17 +243,25 @@ pub fn keyboard_system(
         };
         if state.runtime.handle_key_with_text(&ke, ev.text.as_deref()) {
             state.force_compose = true;
+            any_consumed = true;
         }
+    }
+    if output.keyboard_consumed != any_consumed {
+        output.keyboard_consumed = any_consumed;
     }
 }
 
 pub fn window_focus_system(
     mut window_events: MessageReader<WindowEvent>,
     mut state: NonSendMut<ReposeState>,
+    mut output: ResMut<ReposeOutput>,
 ) {
     for event in window_events.read() {
         if let WindowEvent::WindowFocused(WindowFocused { focused: false, .. }) = event {
             state.runtime.handle_focus_lost();
+            if output.pointer_consumed {
+                output.pointer_consumed = false;
+            }
             state.force_compose = true;
         }
     }

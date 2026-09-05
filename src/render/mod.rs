@@ -76,7 +76,7 @@ pub fn spawn_overlay(commands: &mut bevy::prelude::Commands, handle: bevy::prelu
 
 impl Plugin for ReposeRenderPlugin {
     fn build(&self, app: &mut App) {
-        #[cfg(feature = "offscreen")]
+        #[cfg(all(feature = "offscreen", not(feature = "shared-device")))]
         app.add_plugins(offscreen::OffscreenRenderPlugin {
             settings: self.settings.clone(),
         });
@@ -87,6 +87,7 @@ impl Plugin for ReposeRenderPlugin {
         });
 
         #[cfg(not(any(feature = "offscreen", feature = "shared-device")))]
-        compile_error!("Enable at least one of: offscreen, shared-device");
+        {
+        }
     }
 }

@@ -17,32 +17,39 @@ Targets Bevy **main branch** (0.20-dev, wgpu 30)
 
 ```toml
 [dependencies]
-repose-bevy = "0"
-bevy = { git = "https://github.com/bevyengine/bevy" }
+repose-bevy = "0.2"
+bevy = { git = "https://github.com/bevyengine/bevy", rev = "fb89a8649d9b359e53ffb6e5492ebb7c059ac8af" }
 ```
 
 ```rust
 use bevy::prelude::*;
 use repose_bevy::prelude::*;
-use repose_core::prelude::*;
-use repose_ui::*;
+use repose_core::{Modifier, remember_state};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(ReposePlugin::new(|_sched, _ctx| {
             let count = remember_state(|| 0i32);
-            Column(modifier::new().padding(24.0).gap(12.0)).child((
-                Text(format!("Count: {}", *count.borrow())).size(22.0),
-                Button("Increment", {
-                    let count = count.clone();
-                    move || *count.borrow_mut() += 1
-                }),
+            repose_ui::Column(Modifier::new().padding(24.0).gap(12.0)).child((
+                repose_ui::Text(format!("Count: {}", *count.borrow())).size(22.0),
+                repose_ui::Box(
+                    Modifier::new()
+                        .background(repose_core::Color::from_rgba(60, 60, 60, 255))
+                        .padding(8.0)
+                        .on_click({
+                            let count = count.clone();
+                            move || *count.borrow_mut() += 1
+                        }),
+                )
+                .child(repose_ui::Text("Increment".to_string())),
             ))
         }))
         .run();
 }
 ```
+
+> `offscreen` requires `default-features = false`: `repose-bevy = { version = "0.2", default-features = false, features = ["offscreen"] }` — otherwise `shared-device` (default) wins.
 
 ## Architecture
 

@@ -8,7 +8,7 @@ repository = "https://github.com/mlm-games/repose-bevy"
 readme = "README.md"
 keywords = ["bevy", "ui", "repose", "compose", "wgpu"]
 categories = ["game-development", "gui"]
-# rust-version = "1.98"
+rust-version = "1.98"
 
 [features]
 default = ["shared-device"]
@@ -68,13 +68,21 @@ wgpu = "30"
 [[example]]
 name = "counter"
 path = "examples/counter.rs"
-required-features = ["offscreen"]
 
 [[example]]
 name = "hud"
 path = "examples/hud.rs"
-required-features = ["offscreen"]
 
+[[example]]
+name = "world_inspector"
+path = "examples/world_inspector.rs"
+
+[[example]]
+name = "idiomatic"
+path = "examples/idiomatic.rs"
+
+# Local development only — patches do not propagate to dependents.
+# Uncomment for local `../repose` work:
 # [patch.crates-io]
 # repose-core = { path = "../repose/crates/repose-core" }
 # repose-ui = { path = "../repose/crates/repose-ui" }

@@ -6,7 +6,7 @@ use bevy::render::render_asset::RenderAssets;
 use bevy::render::render_resource::TextureUsages;
 use bevy::render::renderer::{RenderAdapter, RenderContext, RenderDevice, RenderQueue};
 use bevy::render::texture::GpuImage;
-use bevy::render::{ExtractSchedule, Render, RenderApp};
+use bevy::render::{ExtractSchedule, Render, RenderApp, RenderSystems};
 use parking_lot::Mutex;
 use repose_core::RenderCommand;
 use repose_render_wgpu::WgpuSceneRenderer;
@@ -82,7 +82,7 @@ impl Plugin for SharedDevicePlugin {
         render_app
             .insert_resource(settings)
             .add_systems(ExtractSchedule, init_shared_renderer)
-            .add_systems(Render, render_shared_system);
+            .add_systems(Render, render_shared_system.in_set(RenderSystems::Render));
     }
 }
 
@@ -153,11 +153,18 @@ fn prepare_extract_frame(
     if output.needs_redraw {
         frame.scene = state.scene.clone();
     }
-    frame.width = w;
-    frame.height = h;
-    frame.clear_alpha = settings.clear_alpha;
-    frame.image = ui_image.image.clone();
-    frame.cmd_queue = cmd_queue.clone();
+    if frame.width != w {
+        frame.width = w;
+    }
+    if frame.height != h {
+        frame.height = h;
+    }
+    if (frame.clear_alpha - settings.clear_alpha).abs() > f32::EPSILON {
+        frame.clear_alpha = settings.clear_alpha;
+    }
+    if frame.image != ui_image.image {
+        frame.image = ui_image.image.clone();
+    }
 }
 
 fn init_shared_renderer(

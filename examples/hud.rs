@@ -83,7 +83,12 @@ fn hud_ui(
     ))
 }
 
-fn tick_game(time: Res<Time>, shared: Res<SharedState>, keys: Res<ButtonInput<KeyCode>>) {
+fn tick_game(
+    time: Res<Time>,
+    shared: Res<SharedState>,
+    keys: Res<ButtonInput<KeyCode>>,
+    mut last_hp_tick: Local<f64>,
+) {
     if keys.just_pressed(KeyCode::Space) {
         let mut state = shared.inner.lock().unwrap();
         state.score += 10;
@@ -94,8 +99,13 @@ fn tick_game(time: Res<Time>, shared: Res<SharedState>, keys: Res<ButtonInput<Ke
         state.hp = (state.hp + 10).min(100);
     }
 
-    if time.elapsed_secs() as i32 % 5 == 0 {
+    let now = time.elapsed_secs_f64();
+    if *last_hp_tick == 0.0 {
+        *last_hp_tick = now;
+    }
+    if now - *last_hp_tick >= 5.0 {
         let mut state = shared.inner.lock().unwrap();
         state.hp = (state.hp - 1).max(0);
+        *last_hp_tick = now;
     }
 }
