@@ -90,7 +90,7 @@ pub fn compose_repose_system(world: &mut World) {
     let mut scene = frame_out.scene;
     repose_core::dnd::overlay_drag_indicator(&mut scene, state.runtime.mouse_pos_px, false);
 
-    state.runtime.tick_overlays(state.last_redraw);
+    state.runtime.tick_overlays();
     state.last_redraw = web_time::Instant::now();
 
     state.scene = scene;
