@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use repose_bevy::prelude::*;
-use repose_core::prelude::Modifier;
 use repose_core::Vec2 as RVec2;
+use repose_core::prelude::Modifier;
 use repose_ui::{Column, Text, ViewExt};
 
 #[derive(Component)]
@@ -66,7 +66,7 @@ fn inspector_ui(
             };
             repose_ui::Box(
                 Modifier::new()
-                    .padding(8.0)
+                    .padding(8.0.into())
                     .background(bg)
                     .on_click_bevy(move |world| {
                         world.resource_mut::<SelectedEntity>().0 = Some(e);
@@ -76,10 +76,10 @@ fn inspector_ui(
         })
         .collect();
 
-    Column(Modifier::new().padding(12.0).gap(8.0)).child((
+    Column(Modifier::new().padding(12.0.into()).gap(8.0.into())).child((
         Text(format!("Buildings: {}", q.iter().count())),
         Text(format!("Selected: {:?}", selected.0)),
-        Column(Modifier::new().gap(4.0)).child(items),
+        Column(Modifier::new().gap(4.0.into())).child(items),
     ))
 }
 

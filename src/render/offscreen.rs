@@ -1,8 +1,6 @@
 use bevy::asset::RenderAssetUsages;
 use bevy::prelude::*;
-use bevy::render::render_resource::{
-    Extent3d, TextureDimension, TextureFormat as BevyTexFormat,
-};
+use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat as BevyTexFormat};
 use parking_lot::Mutex;
 use std::sync::Arc;
 

@@ -105,36 +105,39 @@ fn core_build_logic(
         .insert_resource(bridge)
         .insert_non_send(ReposeState::from_boxed(root));
 
-    if let Some(pending) = app.world_mut().remove_non_send::<crate::state::ReposePendingPanels>() {
+    if let Some(pending) = app
+        .world_mut()
+        .remove_non_send::<crate::state::ReposePendingPanels>()
+    {
         if let Some(mut state) = app.world_mut().get_non_send_mut::<ReposeState>() {
             state.panels.extend(pending.0);
         }
     }
     app.add_systems(
-            PreUpdate,
-            (
-                sync_viewport_system,
-                pointer_move_system,
-                mouse_button_system,
-                scroll_system,
-                ime_input_system,
-                keyboard_system,
-                cursor_left_system,
-                window_focus_system,
-                bevy_click_drain_system,
-            )
-                .chain(),
+        PreUpdate,
+        (
+            sync_viewport_system,
+            pointer_move_system,
+            mouse_button_system,
+            scroll_system,
+            ime_input_system,
+            keyboard_system,
+            cursor_left_system,
+            window_focus_system,
+            bevy_click_drain_system,
         )
-        .add_systems(
-            PostUpdate,
-            (
-                compose_repose_system,
-                apply_cursor_system,
-                apply_ime_system,
-                clipboard_system,
-            )
-                .chain(),
-        );
+            .chain(),
+    )
+    .add_systems(
+        PostUpdate,
+        (
+            compose_repose_system,
+            apply_cursor_system,
+            apply_ime_system,
+            clipboard_system,
+        )
+            .chain(),
+    );
 }
 
 impl ReposeCorePlugin {
@@ -179,7 +182,9 @@ impl ReposeCorePlugin {
     pub fn from_system<Q, F>(func: F) -> Self
     where
         Q: SystemParam + 'static,
-        F: for<'w, 's> FnMut(Q::Item<'w, 's>, &mut Scheduler, &RenderContext) -> View + Send + 'static,
+        F: for<'w, 's> FnMut(Q::Item<'w, 's>, &mut Scheduler, &RenderContext) -> View
+            + Send
+            + 'static,
     {
         let mut func = func;
         let mut state: Option<SystemState<Q>> = None;
@@ -197,7 +202,9 @@ impl ReposeCorePlugin {
     pub fn from_system_with_settings<Q, F>(settings: ReposePluginSettings, func: F) -> Self
     where
         Q: SystemParam + 'static,
-        F: for<'w, 's> FnMut(Q::Item<'w, 's>, &mut Scheduler, &RenderContext) -> View + Send + 'static,
+        F: for<'w, 's> FnMut(Q::Item<'w, 's>, &mut Scheduler, &RenderContext) -> View
+            + Send
+            + 'static,
     {
         let mut func = func;
         let mut state: Option<SystemState<Q>> = None;
@@ -281,7 +288,9 @@ impl ReposePlugin {
     }
 }
 
-pub fn bevy_system<Q, F>(mut func: F) -> impl FnMut(&mut World, &mut Scheduler, &RenderContext) -> View + Send + 'static
+pub fn bevy_system<Q, F>(
+    mut func: F,
+) -> impl FnMut(&mut World, &mut Scheduler, &RenderContext) -> View + Send + 'static
 where
     Q: SystemParam + 'static,
     F: for<'w, 's> FnMut(Q::Item<'w, 's>, &mut Scheduler, &RenderContext) -> View + Send + 'static,
@@ -319,8 +328,7 @@ impl ReposeAppExt for App {
     {
         if let Some(mut state) = self.world_mut().get_non_send_mut::<ReposeState>() {
             state.panels.push(Box::new(panel));
-        } else if let Some(mut pending) =
-            self.world_mut().get_non_send_mut::<ReposePendingPanels>()
+        } else if let Some(mut pending) = self.world_mut().get_non_send_mut::<ReposePendingPanels>()
         {
             pending.0.push(Box::new(panel));
         } else {

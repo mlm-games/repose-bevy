@@ -29,10 +29,10 @@ fn counter_ui() -> repose_core::prelude::View {
 
     Column(
         Modifier::new()
-            .padding(32.0)
-            .gap(16.0)
+            .padding(32.0.into())
+            .gap(16.0.into())
             .background(ReposeColor::from_rgba(31, 31, 41, 235))
-            .clip_rounded(12.0)
+            .clip_rounded(12.0.into())
             .fill_max_size(),
     )
     .child((

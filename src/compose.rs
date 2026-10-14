@@ -41,10 +41,7 @@ pub fn compose_repose_system(world: &mut World) {
         let bevy_requested = world
             .get_resource::<crate::state::ReposeFrameRequest>()
             .is_some_and(|r| r.take());
-        state.force_compose
-            || settings.0.compose_every_frame
-            || frame_requested
-            || bevy_requested
+        state.force_compose || settings.0.compose_every_frame || frame_requested || bevy_requested
     };
 
     if !needs {
@@ -81,7 +78,9 @@ pub fn compose_repose_system(world: &mut World) {
             }
             repose_ui::Box(repose_core::Modifier::new().fill_max_size()).child(views)
         };
-        state.runtime.compose_frame_output(&mut wrapper, &render_ctx)
+        state
+            .runtime
+            .compose_frame_output(&mut wrapper, &render_ctx)
     });
 
     state.root = root;

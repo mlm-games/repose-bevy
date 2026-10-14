@@ -34,9 +34,7 @@ pub(crate) static GLOBAL_CLIPBOARD: std::sync::OnceLock<Arc<Mutex<ClipboardState
 /// once and every `App` shares the same backing `Arc<Mutex<_>>` so the hooks
 /// remain valid regardless of which `World` inserted the `ClipboardBridge`.
 pub fn install_clipboard_hooks(bridge: ClipboardBridge) {
-    let canonical = GLOBAL_CLIPBOARD
-        .get_or_init(|| bridge.0.clone())
-        .clone();
+    let canonical = GLOBAL_CLIPBOARD.get_or_init(|| bridge.0.clone()).clone();
 
     static INSTALLED: std::sync::OnceLock<()> = std::sync::OnceLock::new();
     INSTALLED.get_or_init(|| {
@@ -49,7 +47,6 @@ pub fn install_clipboard_hooks(bridge: ClipboardBridge) {
             rb.lock().cached_read.take()
         }));
     });
-
 }
 
 /// Sync clipboard writes from Repose output to Bevy's Clipboard resource,

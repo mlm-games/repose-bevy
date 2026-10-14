@@ -92,7 +92,8 @@ fn setup_overlay(
     settings: Res<ReposeSettingsRes>,
     mut frame: ResMut<ReposeExtractedFrame>,
 ) {
-    let usage = TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST | TextureUsages::RENDER_ATTACHMENT;
+    let usage =
+        TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST | TextureUsages::RENDER_ATTACHMENT;
     let image = super::overlay_image(1, 1, usage, settings.0.sampler.clone());
     let handle = images.add(image);
     commands.insert_resource(ReposeUiImage {
@@ -183,7 +184,13 @@ fn init_shared_renderer(
     let wgpu_device = device.wgpu_device().clone();
     let format = wgpu::TextureFormat::Rgba8UnormSrgb;
     let msaa = super::pick_msaa(&adapter, settings.msaa_samples, format);
-    let renderer = WgpuSceneRenderer::from_device(wgpu_device, wgpu_queue, format, msaa);
+    let renderer = match WgpuSceneRenderer::from_device(wgpu_device, wgpu_queue, format, msaa) {
+        Ok(renderer) => renderer,
+        Err(e) => {
+            error!("repose-bevy shared-device: renderer init failed: {e:?}");
+            return;
+        }
+    };
 
     info!("repose-bevy shared-device: bound WgpuSceneRenderer to Bevy device");
     commands.insert_resource(SharedGpu {

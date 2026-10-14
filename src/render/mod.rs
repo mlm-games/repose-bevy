@@ -23,7 +23,9 @@ pub fn overlay_image(
     sampler: bevy::image::ImageSampler,
 ) -> bevy::prelude::Image {
     use bevy::asset::RenderAssetUsages;
-    use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat as BevyTexFormat};
+    use bevy::render::render_resource::{
+        Extent3d, TextureDimension, TextureFormat as BevyTexFormat,
+    };
     let mut image = bevy::prelude::Image::new_fill(
         Extent3d {
             width,
@@ -40,7 +42,10 @@ pub fn overlay_image(
     image
 }
 
-pub fn spawn_overlay(commands: &mut bevy::prelude::Commands, handle: bevy::prelude::Handle<bevy::prelude::Image>) {
+pub fn spawn_overlay(
+    commands: &mut bevy::prelude::Commands,
+    handle: bevy::prelude::Handle<bevy::prelude::Image>,
+) {
     use bevy::prelude::*;
     use bevy::ui::widget::{ImageNode, NodeImageMode};
     use bevy::ui::{FocusPolicy, Node, ZIndex};
@@ -87,7 +92,6 @@ impl Plugin for ReposeRenderPlugin {
         });
 
         #[cfg(not(any(feature = "offscreen", feature = "shared-device")))]
-        {
-        }
+        {}
     }
 }

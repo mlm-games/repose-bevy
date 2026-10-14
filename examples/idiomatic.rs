@@ -33,9 +33,7 @@ fn main() {
             },
             idiomatic_ui,
         ))
-        .add_repose_panel(|_world, _sched, _ctx| {
-            repose_ui::Text("Panel 2".to_string())
-        })
+        .add_repose_panel(|_world, _sched, _ctx| repose_ui::Text("Panel 2".to_string()))
         .insert_resource(Score(0))
         .add_message::<SpawnBuilding>()
         .add_systems(Startup, setup)
@@ -62,15 +60,15 @@ fn idiomatic_ui(
     let local = remember_state(|| 0i32);
     let local_clone = local.clone();
 
-    Column(Modifier::new().padding(16.0).gap(12.0)).child((
+    Column(Modifier::new().padding(16.0.into()).gap(12.0.into())).child((
         Text(format!("Buildings: {count}")),
         Text(format!("Score: {}", score.0)),
         Text(format!("Local clicks: {}", *local.borrow())),
         repose_ui::Box(
             Modifier::new()
-                .padding(12.0)
+                .padding(12.0.into())
                 .background(repose_core::Color::from_rgba(60, 60, 80, 255))
-                .clip_rounded(8.0)
+                .clip_rounded(8.0.into())
                 .on_click_bevy(|world| {
                     let n = {
                         let mut q = world.query::<&Building>();
@@ -84,9 +82,9 @@ fn idiomatic_ui(
         .child(Text("Spawn via World".to_string())),
         repose_ui::Box(
             Modifier::new()
-                .padding(12.0)
+                .padding(12.0.into())
                 .background(repose_core::Color::from_rgba(80, 60, 60, 255))
-                .clip_rounded(8.0)
+                .clip_rounded(8.0.into())
                 .on_click_bevy(|world| {
                     world
                         .resource_mut::<Messages<SpawnBuilding>>()
@@ -96,16 +94,20 @@ fn idiomatic_ui(
         .child(Text("Spawn via Event".to_string())),
         repose_ui::Box(
             Modifier::new()
-                .padding(12.0)
+                .padding(12.0.into())
                 .background(repose_core::Color::from_rgba(60, 80, 100, 255))
-                .clip_rounded(8.0)
+                .clip_rounded(8.0.into())
                 .on_click(move || *local_clone.borrow_mut() += 1),
         )
         .child(Text("Local state".to_string())),
     ))
 }
 
-fn handle_spawns(mut reader: MessageReader<SpawnBuilding>, mut commands: Commands, mut score: ResMut<Score>) {
+fn handle_spawns(
+    mut reader: MessageReader<SpawnBuilding>,
+    mut commands: Commands,
+    mut score: ResMut<Score>,
+) {
     for ev in reader.read() {
         commands.spawn(Building { name: ev.0.clone() });
         score.0 += 10;

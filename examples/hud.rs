@@ -64,20 +64,20 @@ fn hud_ui(
     let heal = heal_flag.clone();
 
     Row(Modifier::new()
-        .padding(16.0)
-        .gap(24.0)
+        .padding(16.0.into())
+        .gap(24.0.into())
         .fill_max_width()
         .background(ReposeColor::from_rgba(20, 20, 30, 200))
-        .clip_rounded(8.0))
+        .clip_rounded(8.0.into()))
     .child((
         Text(format!("HP: {: >3}", state.hp)),
         Spacer(),
         Text(format!("Score: {: >5}", state.score)),
         Spacer(),
         Box(Modifier::new()
-            .padding(12.0)
+            .padding(12.0.into())
             .background(ReposeColor::from_rgba(60, 60, 80, 255))
-            .clip_rounded(4.0)
+            .clip_rounded(4.0.into())
             .on_click(move || heal.store(true, Ordering::Relaxed)))
         .child(Text("+10 HP".to_string())),
     ))

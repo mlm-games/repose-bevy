@@ -107,8 +107,7 @@ impl BevyModifierExt for Modifier {
         let queue_at_compose = CURRENT_PENDING.with(|c| c.borrow().clone());
         self.on_click(move || {
             let f_clone = Arc::clone(&f);
-            let cb: Box<dyn FnOnce(&mut World) + Send> =
-                Box::new(move |world| f_clone(world));
+            let cb: Box<dyn FnOnce(&mut World) + Send> = Box::new(move |world| f_clone(world));
             if let Some(q) = &queue_at_compose {
                 q.lock().push(cb);
             } else {

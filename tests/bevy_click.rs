@@ -1,8 +1,8 @@
 use bevy::prelude::*;
-use repose_bevy::bridge::{pending_scope, BevyModifierExt};
+use repose_bevy::bridge::{BevyModifierExt, pending_scope};
 use repose_bevy::state::ReposeState;
-use repose_core::{RenderContext, Scheduler, View, input::PointerButton};
 use repose_core::Vec2 as RVec2;
+use repose_core::{RenderContext, Scheduler, View, input::PointerButton};
 use repose_ui::{Text, ViewExt};
 
 #[derive(Resource, Default)]
@@ -10,16 +10,18 @@ struct Counter(i32);
 
 #[test]
 fn on_click_bevy_not_dropped_when_input_outside_compose_scope() {
-    let mut state = ReposeState::new_with_world(|_world: &mut World, _sched: &mut Scheduler, _ctx: &RenderContext| {
-        repose_ui::Box(
-            repose_core::Modifier::new()
-                .size(100.0, 100.0)
-                .on_click_bevy(|world| {
-                    world.resource_mut::<Counter>().0 += 1;
-                }),
-        )
-        .child(Text("Spawn".to_string()))
-    });
+    let mut state = ReposeState::new_with_world(
+        |_world: &mut World, _sched: &mut Scheduler, _ctx: &RenderContext| {
+            repose_ui::Box(
+                repose_core::Modifier::new()
+                    .size(100.0.into(), 100.0.into())
+                    .on_click_bevy(|world| {
+                        world.resource_mut::<Counter>().0 += 1;
+                    }),
+            )
+            .child(Text("Spawn".to_string()))
+        },
+    );
 
     let mut world = World::new();
     world.insert_resource(Counter(0));
@@ -29,15 +31,13 @@ fn on_click_bevy_not_dropped_when_input_outside_compose_scope() {
     let pending = std::sync::Arc::clone(&state.pending_bevy_clicks);
 
     let _out = pending_scope(&pending, || {
-        let mut wrapper = |sched: &mut Scheduler, ctx: &RenderContext| {
-            (state.root)(&mut world, sched, ctx)
-        };
-        state.runtime.compose_frame_output(&mut wrapper, &state.render_ctx)
+        let mut wrapper =
+            |sched: &mut Scheduler, ctx: &RenderContext| (state.root)(&mut world, sched, ctx);
+        state
+            .runtime
+            .compose_frame_output(&mut wrapper, &state.render_ctx)
     });
-    assert!(
-        pending.lock().is_empty(),
-        "no click yet"
-    );
+    assert!(pending.lock().is_empty(), "no click yet");
 
     let res = state
         .runtime
@@ -58,68 +58,80 @@ fn on_click_bevy_not_dropped_when_input_outside_compose_scope() {
     for cb in cbs {
         cb(&mut world);
     }
-    assert_eq!(world.resource::<Counter>().0, 1, "World mutation must happen");
+    assert_eq!(
+        world.resource::<Counter>().0,
+        1,
+        "World mutation must happen"
+    );
 }
 
 #[test]
 fn backgroundless_fullscreen_root_does_not_capture_pointer() {
-    let mut state = ReposeState::new_with_world(|_world: &mut World, _sched: &mut Scheduler, _ctx: &RenderContext| {
-        repose_ui::Box(repose_core::Modifier::new().fill_max_size())
-            .child(Text("empty".to_string()))
-    });
+    let mut state = ReposeState::new_with_world(
+        |_world: &mut World, _sched: &mut Scheduler, _ctx: &RenderContext| {
+            repose_ui::Box(repose_core::Modifier::new().fill_max_size())
+                .child(Text("empty".to_string()))
+        },
+    );
     state.runtime.set_viewport_and_scale(800, 600, 1.0);
     state.runtime.pointer_inside = true;
     state.render_ctx = RenderContext::new();
     let pending = std::sync::Arc::clone(&state.pending_bevy_clicks);
     let _ = pending_scope(&pending, || {
         let mut w = World::new();
-        let mut wrapper = |sched: &mut Scheduler, ctx: &RenderContext| {
-            (state.root)(&mut w, sched, ctx)
-        };
-        state.runtime.compose_frame_output(&mut wrapper, &state.render_ctx)
+        let mut wrapper =
+            |sched: &mut Scheduler, ctx: &RenderContext| (state.root)(&mut w, sched, ctx);
+        state
+            .runtime
+            .compose_frame_output(&mut wrapper, &state.render_ctx)
     });
     let _ = state
         .runtime
         .handle_pointer_move(RVec2 { x: 400.0, y: 300.0 });
     let out = pending_scope(&pending, || {
         let mut w = World::new();
-        let mut wrapper = |sched: &mut Scheduler, ctx: &RenderContext| {
-            (state.root)(&mut w, sched, ctx)
-        };
-        state.runtime.compose_frame_output(&mut wrapper, &state.render_ctx)
+        let mut wrapper =
+            |sched: &mut Scheduler, ctx: &RenderContext| (state.root)(&mut w, sched, ctx);
+        state
+            .runtime
+            .compose_frame_output(&mut wrapper, &state.render_ctx)
     });
     assert!(
         !out.wants_pointer,
         "backgroundless root must leave wants_pointer == false over empty space (hover empty)"
     );
-    let mut state2 = ReposeState::new_with_world(|_world: &mut World, _sched: &mut Scheduler, _ctx: &RenderContext| {
-        repose_ui::Box(
-            repose_core::Modifier::new()
-                .fill_max_size()
-                .background(repose_core::Color::from_rgba(10, 10, 10, 255)),
-        )
-        .child(Text("opaque".to_string()))
-    });
+    let mut state2 = ReposeState::new_with_world(
+        |_world: &mut World, _sched: &mut Scheduler, _ctx: &RenderContext| {
+            repose_ui::Box(
+                repose_core::Modifier::new()
+                    .fill_max_size()
+                    .background(repose_core::Color::from_rgba(10, 10, 10, 255)),
+            )
+            .child(Text("opaque".to_string()))
+        },
+    );
     state2.runtime.set_viewport_and_scale(800, 600, 1.0);
     state2.runtime.pointer_inside = true;
     state2.render_ctx = RenderContext::new();
     let pending2 = std::sync::Arc::clone(&state2.pending_bevy_clicks);
     let _ = pending_scope(&pending2, || {
         let mut w = World::new();
-        let mut wrapper = |sched: &mut Scheduler, ctx: &RenderContext| {
-            (state2.root)(&mut w, sched, ctx)
-        };
-        state2.runtime.compose_frame_output(&mut wrapper, &state2.render_ctx)
+        let mut wrapper =
+            |sched: &mut Scheduler, ctx: &RenderContext| (state2.root)(&mut w, sched, ctx);
+        state2
+            .runtime
+            .compose_frame_output(&mut wrapper, &state2.render_ctx)
     });
     let _ = state2
         .runtime
         .handle_pointer_move(RVec2 { x: 400.0, y: 300.0 });
     let out2 = pending_scope(&pending2, || {
         let mut w = World::new();
-        let mut wrapper = |sched: &mut Scheduler, ctx: &RenderContext| {
-            (state2.root)(&mut w, sched, ctx)
-        };
-        state2.runtime.compose_frame_output(&mut wrapper, &state2.render_ctx)
+        let mut wrapper =
+            |sched: &mut Scheduler, ctx: &RenderContext| (state2.root)(&mut w, sched, ctx);
+        state2
+            .runtime
+            .compose_frame_output(&mut wrapper, &state2.render_ctx)
     });
     assert!(
         !out2.wants_pointer,
@@ -140,7 +152,7 @@ fn headless_app_with_core_plugin_steps_click() {
         |_world: &mut World, _sched: &mut Scheduler, _ctx: &RenderContext| {
             repose_ui::Box(
                 repose_core::Modifier::new()
-                    .size(100.0, 100.0)
+                    .size(100.0.into(), 100.0.into())
                     .on_click_bevy(|world| {
                         world.resource_mut::<Counter>().0 += 10;
                     }),
