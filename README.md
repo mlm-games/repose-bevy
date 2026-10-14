@@ -2,7 +2,7 @@
 
 Embed [Repose](https://github.com/mlm-games/repose) (Compose-like Rust UI) inside [Bevy](https://bevy.org).
 
-Targets Bevy **main branch** (0.20-dev, wgpu 30) 
+Targets Bevy **0.20** (wgpu 30) 
 
 ## Features
 
@@ -18,7 +18,7 @@ Targets Bevy **main branch** (0.20-dev, wgpu 30)
 ```toml
 [dependencies]
 repose-bevy = "0.2"
-bevy = { git = "https://github.com/bevyengine/bevy", rev = "fb89a8649d9b359e53ffb6e5492ebb7c059ac8af" }
+bevy = "0.20"
 ```
 
 ```rust

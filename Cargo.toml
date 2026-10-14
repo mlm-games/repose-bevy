@@ -16,7 +16,7 @@ offscreen = ["dep:pollster", "dep:image"]
 shared-device = []
 
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", rev = "fb89a8649d9b359e53ffb6e5492ebb7c059ac8af", default-features = false, features = [
+bevy = { version = "0.20", default-features = false, features = [
     "bevy_asset",
     "bevy_log",
     "bevy_render",

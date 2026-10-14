@@ -179,7 +179,7 @@ fn init_shared_renderer(
         return;
     }
 
-    let wgpu_queue: wgpu::Queue = (**queue.0).clone();
+    let wgpu_queue: wgpu::Queue = (**queue).clone();
     let wgpu_device = device.wgpu_device().clone();
     let format = wgpu::TextureFormat::Rgba8UnormSrgb;
     let msaa = super::pick_msaa(&adapter, settings.msaa_samples, format);
