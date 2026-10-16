@@ -82,7 +82,12 @@ impl Plugin for SharedDevicePlugin {
         render_app
             .insert_resource(settings)
             .add_systems(ExtractSchedule, init_shared_renderer)
-            .add_systems(Render, render_shared_system.in_set(RenderSystems::Render));
+            .add_systems(
+                Render,
+                render_shared_system
+                    .in_set(RenderSystems::Render)
+                    .before(bevy::render::renderer::render_system),
+            );
     }
 }
 
